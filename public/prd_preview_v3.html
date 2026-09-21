@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD 预览 - V3</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'SimSun', '仿宋', serif;
+            line-height: 1.5;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .document {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2.54cm;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 文档标题 - 黑体，22pt，居中 */
+        .doc-title {
+            font-family: 'Noto Sans SC', 'SimHei', '黑体', sans-serif;
+            font-size: 22pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 24pt;
+            margin-bottom: 12pt;
+        }
+
+        /* 大章节标题 - 黑体，15pt，左对齐 */
+        .section-title {
+            font-family: 'Noto Sans SC', 'SimHei', '黑体', sans-serif;
+            font-size: 15pt;
+            font-weight: bold;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+        }
+
+        /* 子章节标题 - 黑体，15pt，左对齐 */
+        .subsection-title {
+            font-family: 'Noto Sans SC', 'SimHei', '黑体', sans-serif;
+            font-size: 15pt;
+            font-weight: bold;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+        }
+
+        /* 四级标题 - 黑体，15pt，左对齐 */
+        .sub-subsection-title {
+            font-family: 'Noto Sans SC', 'SimHei', '黑体', sans-serif;
+            font-size: 15pt;
+            font-weight: bold;
+            margin-top: 9pt;
+            margin-bottom: 3pt;
+        }
+
+        /* 普通段落 - 仿宋，14pt，首行缩进 */
+        .paragraph {
+            font-family: 'Noto Sans SC', 'FangSong', '仿宋', serif;
+            font-size: 14pt;
+            text-indent: 0.75cm;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        /* 列表项 - 仿宋，14pt */
+        .list-item {
+            font-family: 'Noto Sans SC', 'FangSong', '仿宋', serif;
+            font-size: 14pt;
+            margin-top: 3pt;
+            margin-bottom: 0;
+        }
+
+        /* 接口标题 - 仿宋，14pt，加粗 */
+        .api-title {
+            font-family: 'Noto Sans SC', 'FangSong', '仿宋', serif;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 3pt;
+            margin-bottom: 0;
+        }
+
+        /* 表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6pt;
+            margin-bottom: 6pt;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            font-family: 'Noto Sans SC', 'SimHei', '黑体', sans-serif;
+            font-size: 14pt;
+            font-weight: bold;
+        }
+
+        td {
+            font-family: 'Noto Sans SC', 'FangSong', '仿宋', serif;
+            font-size: 14pt;
+        }
+
+        .spacer {
+            height: 6pt;
+        }
+
+        .download-link {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
+
+        .download-link a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .download-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="download-link">
+        <a href="https://coze-coding-project.tos.coze.site/coze_storage_7600202946336292902/prd_8a6f2614.docx?sign=1773459251-79237e8213-0-f0110e55cf779b7a8877238f55d9bb15217cb7f1b1de501ef79242b896d9fba1" target="_blank">
+            下载 Word 文档
+        </a>
+    </div>
+
+    <div class="document">
+        <h1 class="doc-title">市场运营平台首页 PRD（内容确认版）</h1>
+
+        <h2 class="section-title">修订历史</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>修订人</th>
+                    <th>修订内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2025-01-15</td>
+                    <td>张三</td>
+                    <td>初始版本</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="spacer"></div>
+
+        <h2 class="section-title">1 简介</h2>
+
+        <h3 class="subsection-title">1.1 需求来源</h3>
+
+        <p class="paragraph">市场运营平台首页需要展示关键运营指标和功能入口。</p>
+
+        <h3 class="subsection-title">1.2 目标用户</h3>
+
+        <p class="list-item">1. 使用人员：市场运营人员</p>
+        <p class="list-item">2. 管理人员：运营经理</p>
+
+        <h2 class="section-title">2 业务流程</h2>
+
+        <h3 class="subsection-title">2.1 首页访问流程</h3>
+
+        <p class="paragraph">用户登录后进入首页，查看核心指标。</p>
+
+        <h2 class="section-title">3 营服运营平台需求</h2>
+
+        <h3 class="subsection-title">3.1 指标调度模块</h3>
+
+        <h4 class="sub-subsection-title">3.1.1 指标卡片展示</h4>
+
+        <p class="list-item">1. 指标名称：展示指标名称</p>
+        <p class="list-item">2. 指标数值：展示当前数值</p>
+        <p class="list-item">3. 指标趋势：展示环比趋势</p>
+
+        <p class="api-title">• 接口名称：/api/metrics</p>
+        <p class="api-title">• 接口字段：name, value, trend</p>
+    </div>
+</body>
+</html>

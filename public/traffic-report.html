@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>新疆移动流量运营分析报告</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f5f5f5; padding: 32px; }
+  .report { background: #fff; max-width: 860px; margin: 0 auto; padding: 36px 40px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .section-title { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 12px; margin-top: 24px; }
+  .section-title:first-child { margin-top: 0; }
+  .content { font-size: 13px; color: #333; line-height: 2; }
+  .content .indent { padding-left: 20px; }
+  .highlight { color: #1a3a6e; font-weight: 600; }
+  .tag { display: inline-block; border: 1px solid #999; border-radius: 3px; padding: 0 6px; font-size: 12px; color: #666; margin: 0 2px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  thead th { background: #eef2f7; color: #333; font-weight: 600; padding: 8px 10px; text-align: center; border: 1px solid #d0d7de; }
+  tbody td { padding: 7px 10px; border: 1px solid #d0d7de; text-align: center; color: #333; }
+  tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3) { text-align: left; }
+  tbody td:last-child { text-align: left; font-size: 11px; }
+  .chart-area { margin-top: 16px; padding: 16px; border: 1px solid #e0e0e0; border-radius: 6px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 10px; }
+  canvas { width: 100%; height: 220px; }
+  .legend { display: flex; gap: 20px; justify-content: flex-end; margin-top: 8px; font-size: 12px; color: #666; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="report">
+  <h1 style="text-align:center;font-size:20px;font-weight:bold;color:#222;margin:0 0 2px 0;">流量运营7月洞察报告</h1>
+  <div style="text-align:center;font-size:11px;color:#999;margin-bottom:16px;">2026年7月14日</div>
+
+  <div class="section-title">一、总体分析</div>
+  <div class="content">
+    <div>截至2026年7月13日，全疆流量运营整体情况如下：</div>
+    <div class="indent" style="margin-top:6px;">
+      1、<span class="highlight">总体评价</span>：全疆当月流量增幅8.5%，年累计流量增幅7.8%，流量份额58.3%，整体态势<span class="tag">面临挑战</span>。
+    </div>
+    <div class="indent">
+      2、<span class="highlight">关键亮点</span>：
+      <div style="padding-left:18px;">
+        (1) DOU持续提升：全疆当月DOU达12.8GB/户，环比增长4.7%，5G用户DOU达18.6GB/户；<br>
+        (2) 流量份额稳步扩大：全疆流量份额58.3%，环比提升0.4pp，其中乌鲁木齐、昌吉份额超60%；<br>
+        (3) 手机上网业务量增长：当月手机上网业务量568.2亿MB，同比增长9.2%。
+      </div>
+    </div>
+    <div class="indent">
+      3、<span class="highlight">主要挑战</span>：
+      <div style="padding-left:18px;">
+        (1) 流量饱和度偏低：全疆流量饱和度72.3%，低于集团均值75%，和田、克州不足65%；<br>
+        (2) 低流量客户占比较高：月流量低于1GB客户占比达18.7%，主要集中在喀什、和田；<br>
+        (3) 区域发展不均：<span class="tag">克州</span>流量增幅仅3.2%，远低于全疆均值，需重点关注。
+      </div>
+    </div>
+    <div style="font-size:10px;color:#999;margin-top:8px;">注：本段分析由AI生成，仅供参考。</div>
+  </div>
+
+  <div class="section-title">二、区域对比</div>
+  <table>
+    <thead>
+      <tr>
+        <th>时间</th>
+        <th>区域</th>
+        <th>指标</th>
+        <th>指标值</th>
+        <th>趋势/洞察</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2026-07</td>
+        <td>乌鲁木齐</td>
+        <td>当月流量增幅</td>
+        <td>10.2%</td>
+        <td>表现优异，环比增长1.3pp，超额完成目标。需关注增长持续性，挖掘5G用户流量潜力</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>克拉玛依</td>
+        <td>当月流量增幅</td>
+        <td>9.9%</td>
+        <td>表现良好，环比增长0.9pp。工业场景5G应用拉动明显，建议深化行业流量运营</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>昌吉</td>
+        <td>当月流量增幅</td>
+        <td>9.8%</td>
+        <td>表现良好，环比增长0.8pp。高校区域流量拉动明显，建议加大校园场景运营</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>石河子</td>
+        <td>当月流量增幅</td>
+        <td>9.5%</td>
+        <td>表现稳健，环比增长0.6pp。兵团区域流量需求旺盛，建议加强套餐适配推荐</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>伊犁</td>
+        <td>当月流量增幅</td>
+        <td>9.1%</td>
+        <td>表现稳健，环比持平。旅游季流量增长显著，需做好旺季到淡季的过渡策略</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>塔城</td>
+        <td>当月流量增幅</td>
+        <td>8.7%</td>
+        <td>表现平稳，环比增长0.4pp。农牧区流量渗透有提升空间，建议推进5G终端普及</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>博州</td>
+        <td>当月流量增幅</td>
+        <td>8.4%</td>
+        <td>表现平稳，环比增长0.2pp。赛里木湖旅游区流量季节性波动大，需提前布局</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>巴州</td>
+        <td>当月流量增幅</td>
+        <td>8.0%</td>
+        <td>接近全疆均值，环比持平。库尔勒城区表现较好，县域需加强流量引导</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>阿克苏</td>
+        <td>当月流量增幅</td>
+        <td>7.5%</td>
+        <td>略低于全疆均值，环比下降0.2pp。低流量客户占比偏高，需精准触达激活</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>哈密</td>
+        <td>当月流量增幅</td>
+        <td>7.1%</td>
+        <td>低于全疆均值，环比下降0.3pp。矿区场景流量潜力未释放，建议定向推广</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>吐鲁番</td>
+        <td>当月流量增幅</td>
+        <td>6.6%</td>
+        <td>低于全疆均值，环比下降0.5pp。高温季户外流量需求偏低，室内场景需加强</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>奎屯</td>
+        <td>当月流量增幅</td>
+        <td>6.2%</td>
+        <td>低于全疆均值，环比下降0.4pp。商圈流量集中度高，住宅区渗透不足</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>阿勒泰</td>
+        <td>当月流量增幅</td>
+        <td>5.8%</td>
+        <td>低于全疆均值，环比下降0.7pp。冬季旅游淡季流量回落，建议提前做保有运营</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>喀什</td>
+        <td>当月流量增幅</td>
+        <td>5.1%</td>
+        <td>低于全疆均值，环比下降0.3pp。南疆区域流量渗透仍有较大提升空间</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>和田</td>
+        <td>当月流量增幅</td>
+        <td>4.3%</td>
+        <td>表现落后，环比下降0.6pp。低流量客户占比高达26%，需加强流量激活运营</td>
+      </tr>
+      <tr>
+        <td>2026-07</td>
+        <td>克州</td>
+        <td>当月流量增幅</td>
+        <td>3.2%</td>
+        <td>表现落后，环比下降1.1pp。网络覆盖不足影响用户体验，建议优先补盲补弱</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="font-size:10px;color:#999;margin-top:4px;">注：趋势/洞察列由AI生成，仅供参考。</div>
+
+  <div class="section-title">三、维度分析</div>
+  <div class="chart-area">
+    <div class="chart-title">近六月流量运营核心指标趋势</div>
+    <canvas id="trendChart" width="760" height="220"></canvas>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>当月流量增幅(%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>流量份额(%)</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('trendChart');
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+canvas.width = 760 * dpr;
+canvas.height = 220 * dpr;
+canvas.style.width = '760px';
+canvas.style.height = '220px';
+ctx.scale(dpr, dpr);
+
+const W = 760, H = 220;
+const pad = { top: 20, right: 40, bottom: 30, left: 50 };
+const cw = W - pad.left - pad.right;
+const ch = H - pad.top - pad.bottom;
+
+const months = ['2月', '3月', '4月', '5月', '6月', '7月'];
+const growth = [6.2, 7.1, 7.8, 8.0, 8.5, 8.5];
+const share = [56.8, 57.1, 57.4, 57.6, 57.9, 58.3];
+
+// growth: left axis 0-12
+// share: right axis 54-60
+const gMin = 0, gMax = 12;
+const sMin = 54, sMax = 60;
+
+function xPos(i) { return pad.left + (i / (months.length - 1)) * cw; }
+function yG(v) { return pad.top + ch - ((v - gMin) / (gMax - gMin)) * ch; }
+function yS(v) { return pad.top + ch - ((v - sMin) / (sMax - sMin)) * ch; }
+
+// Grid
+ctx.strokeStyle = '#e5e7eb';
+ctx.lineWidth = 0.5;
+for (let v = 0; v <= 12; v += 2) {
+  const y = yG(v);
+  ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+}
+
+// Bars for growth
+const barW = 24;
+ctx.fillStyle = 'rgba(59,130,246,0.35)';
+months.forEach((_, i) => {
+  const x = xPos(i);
+  const y = yG(growth[i]);
+  const h = yG(0) - y;
+  ctx.fillRect(x - barW/2, y, barW, h);
+});
+
+// Line for growth
+ctx.strokeStyle = '#3b82f6';
+ctx.lineWidth = 2;
+ctx.beginPath();
+months.forEach((_, i) => {
+  const x = xPos(i), y = yG(growth[i]);
+  i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+});
+ctx.stroke();
+
+// Dots + labels for growth
+ctx.fillStyle = '#3b82f6';
+months.forEach((_, i) => {
+  const x = xPos(i), y = yG(growth[i]);
+  ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+  ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(growth[i] + '%', x, y - 8);
+});
+
+// Line for share
+ctx.strokeStyle = '#f59e0b';
+ctx.lineWidth = 2;
+ctx.beginPath();
+months.forEach((_, i) => {
+  const x = xPos(i), y = yS(share[i]);
+  i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+});
+ctx.stroke();
+
+// Dots + labels for share
+ctx.fillStyle = '#f59e0b';
+months.forEach((_, i) => {
+  const x = xPos(i), y = yS(share[i]);
+  ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+  ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(share[i] + '%', x, y - 8);
+});
+
+// X axis labels
+ctx.fillStyle = '#666';
+ctx.font = '11px sans-serif';
+ctx.textAlign = 'center';
+months.forEach((m, i) => { ctx.fillText(m, xPos(i), H - 8); });
+
+// Left Y axis labels
+ctx.textAlign = 'right';
+ctx.fillStyle = '#3b82f6';
+for (let v = 0; v <= 12; v += 4) {
+  ctx.fillText(v + '%', pad.left - 8, yG(v) + 4);
+}
+
+// Right Y axis labels
+ctx.textAlign = 'left';
+ctx.fillStyle = '#f59e0b';
+for (let v = 54; v <= 60; v += 2) {
+  ctx.fillText(v + '%', W - pad.right + 8, yS(v) + 4);
+}
+</script>
+</body>
+</html>

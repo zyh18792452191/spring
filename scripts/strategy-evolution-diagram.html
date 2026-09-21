@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>新疆策略中心智慧运营演进图</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2400px; background: #FFFFFF; color: #1F2937;
+    font-family: "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", sans-serif; padding: 30px 38px 34px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid #1F2937; padding-bottom: 12px; }
+  .title { font-size: 33px; font-weight: 700; letter-spacing: 1px; }
+  .title span { font-size: 16px; font-weight: 400; color: #6B7280; margin-left: 12px; letter-spacing: 0; }
+  .legend { display: flex; gap: 18px; align-items: center; font-size: 14px; color: #374151; }
+  .legend .lg { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 26px; height: 15px; border-radius: 3px; display: inline-block; }
+  .sw.done { background: #E8EAED; border: 1.4px solid #9AA0A6; }
+  .sw.opt { background: #FFF1DC; border: 1.6px solid #E8A33D; }
+  .sw.add { background: #E4F0FE; border: 1.6px solid #2F7DE1; }
+  .sw.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; }
+  .band { border: 1.6px solid #C7CDD6; border-radius: 6px; margin-top: 16px; overflow: hidden; }
+  .band-hd { background: #F3F5F8; border-bottom: 1.4px solid #C7CDD6; padding: 8px 12px; font-size: 17px; font-weight: 700; color: #1F3A5F; display: flex; justify-content: space-between; }
+  .band-hd em { font-style: normal; font-size: 13px; font-weight: 400; color: #6B7280; }
+  .band-bd { padding: 12px; }
+  .g-in { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .g-stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .g-out { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .chip { border-radius: 4px; padding: 9px 11px; border: 1.4px solid #9AA0A6; background: #E8EAED; color: #202124; }
+  .chip b { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .chip i { display: block; font-style: normal; font-size: 12px; color: #5F6B7A; margin-top: 4px; line-height: 1.5; }
+  .chip.opt { background: #FFF1DC; border-color: #E8A33D; color: #7A4B00; }
+  .chip.opt i { color: #96671C; }
+  .chip.add { background: #E4F0FE; border-color: #2F7DE1; color: #12457F; }
+  .chip.add i { color: #3C6FA8; }
+  .chip.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; color: #4A5568; }
+  .chip.tbd i { color: #7A8699; }
+  .stage { border: 1.6px solid #C7CDD6; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+  .stage-hd { padding: 9px 12px; color: #FFFFFF; }
+  .stage-hd b { display: block; font-size: 17px; }
+  .stage-hd em { font-style: normal; font-size: 12px; opacity: .9; display: block; margin-top: 3px; }
+  .s1 .stage-hd { background: #6B7280; }
+  .s2 .stage-hd { background: #2F7DE1; }
+  .s3 .stage-hd { background: #1F3A5F; }
+  .s1 { border-color: #9AA0A6; }
+  .s2 { border-color: #2F7DE1; box-shadow: 0 0 0 2px #E4F0FE inset; }
+  .s3 { border-color: #1F3A5F; }
+  .stage-bd { padding: 10px; display: grid; gap: 8px; flex: 1; }
+  .stage-tag { margin-top: 8px; font-size: 12px; padding: 5px 8px; border-radius: 4px; background: #F3F5F8; color: #374151; border: 1px dashed #9AA0A6; }
+  .flowline { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+  .flowline .node { border: 1.6px solid #1F3A5F; background: #F7F9FC; border-radius: 22px; padding: 8px 22px; font-size: 16px; font-weight: 700; color: #1F3A5F; }
+  .flowline .node.now { border-color: #E8A33D; background: #FFF1DC; color: #7A4B00; }
+  .flowline .node.next { border-color: #2F7DE1; background: #E4F0FE; color: #12457F; }
+  .flowline .node.plan { border-color: #1F3A5F; background: #1F3A5F; color: #FFFFFF; }
+  .arw { font-size: 18px; color: #1F3A5F; }
+  .loop { margin-top: 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1F3A5F; background: #F7F9FC; border: 1.4px solid #1F3A5F; border-radius: 6px; padding: 10px 14px; }
+  .loop b { font-size: 14px; }
+  .note { margin-top: 14px; font-size: 13px; color: #6B7280; line-height: 1.75; border-top: 1.4px solid #E5E7EB; padding-top: 10px; }
+  .note b { color: #1F2937; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">新疆市场运营平台 · 策略中心智慧运营演进图<span>从人工 → 半自动 → AI，参照集团 / 北京移动策略中心规划，结合新疆运营平台现状适配</span></div>
+  <div class="legend">
+    <div class="lg"><span class="sw done"></span>已有（新疆已实现）</div>
+    <div class="lg"><span class="sw opt"></span>优化（已有增强）</div>
+    <div class="lg"><span class="sw add"></span>新增（待建 / 规划）</div>
+    <div class="lg"><span class="sw tbd"></span>待立项</div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="band-hd"><span>① 洞察输入：市场 · 客户 · 商机 · 短板</span><em>对应新疆现有：AI 指标监控预警、AI 洞察管理 V8.0、商机管理体系、根因库</em></div>
+  <div class="band-bd g-in">
+    <div class="chip"><b>市场态势 AI 洞察</b><i>KPI 指标短板 · 市场指标异动（指标监控预警）</i></div>
+    <div class="chip"><b>客户趋势 AI 洞察</b><i>构成分析 / 趋势分析 / 预警分析（AI 洞察管理）</i></div>
+    <div class="chip"><b>营服商机 AI 洞察</b><i>触点行为捕捉 · 意图识别商机（商机管理 / 客群商机）</i></div>
+    <div class="chip opt"><b>短板问题定位</b><i>优化：指标溯源 + 根因分析 → 直接生成待办诊断</i></div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="band-hd"><span>② 策略生成：三阶段智慧运营演进（新疆落地路线）</span><em>阶段①＝当前基线；阶段②＝第一期 / 第二期建设；阶段③＝规划期（依赖模型能力与数据积累）</em></div>
+  <div class="band-bd">
+    <div class="g-stage">
+      <div class="stage s1">
+        <div class="stage-hd"><b>阶段① 人工策略创建</b><em>新疆当前基线 · 已具备</em></div>
+        <div class="stage-bd">
+          <div class="chip"><b>人工选客群 + 产品</b><i>策略匹配页（数据洞察 → 策略匹配 → 调度派发）</i></div>
+          <div class="chip"><b>人工配置活动与话术</b><i>IOP 普通营销 / 剧本营销 / 网格通（分散配置）</i></div>
+          <div class="chip"><b>人工派发与跟进</b><i>策略调度页 + 工单看板</i></div>
+          <div class="chip tbd"><b>现状短板</b><i>无历史效果参照 · 无方案比选 · 沉淀数据用不起来 · 活动移交后不可见</i></div>
+        </div>
+      </div>
+      <div class="stage s2">
+        <div class="stage-hd"><b>阶段② AI 辅助策略创建</b><em>本期建设目标 · 半自动（人确认）</em></div>
+        <div class="stage-bd">
+          <div class="chip opt"><b>历史效果参照</b><i>相似策略 + 历史达成率 / 健康度，可直接引用</i></div>
+          <div class="chip add"><b>AI 定策候选</b><i>2-3 个候选方案 + 置信度 + 推荐依据（可解释）</i></div>
+          <div class="chip add"><b>方案比选</b><i>客群规模 / 产品 / 渠道 / 成本 / 转化 / 风险的横向对比</i></div>
+          <div class="chip add"><b>活动配置统一页</b><i>三类活动一个页面配置，输出统一活动实例</i></div>
+          <div class="chip add"><b>策略统筹与策略控制</b><i>优先级排序 · 产能预估 · 防打扰 / 名单 / 时段 / 互斥</i></div>
+          <div class="chip add"><b>AI 复盘沉淀</b><i>复盘报告 → 模板候选 → 应用此模板反哺定策</i></div>
+        </div>
+      </div>
+      <div class="stage s3">
+        <div class="stage-hd"><b>阶段③ AI 智慧运营</b><em>规划期 · 自动化与自学习（AI 主导，人监督）</em></div>
+        <div class="stage-bd">
+          <div class="chip add"><b>融合策略 AI 智能生成</b><i>客群 × 产品 × 渠道 自动组策（对齐集团"人-货-场"匹配）</i></div>
+          <div class="chip add"><b>策略实时动态调整</b><i>过程指标分析驱动的在途策略调优</i></div>
+          <div class="chip add"><b>策略 AI 动态评估</b><i>可视化评估 + 归因分析 + 可信规则分析</i></div>
+          <div class="chip add"><b>策略 AI 统筹调度</b><i>跨策略产能 / 频次 / 触点统筹，避免过度营销</i></div>
+          <div class="chip add"><b>AI 自学习调优</b><i>效果回流反哺模型与关联强度，逐步减少人工干预</i></div>
+        </div>
+      </div>
+    </div>
+    <div class="flowline">
+      <span class="node now">人工（当前）</span><span class="arw">▶</span>
+      <span class="node next">半自动：AI 辅助 + 人工确认（本期）</span><span class="arw">▶</span>
+      <span class="node plan">AI 智慧运营：自动生成 · 动态调优（规划）</span>
+    </div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="band-hd"><span>③ 执行触达：多触点协同生产</span><em>新疆现有渠道能力 + 执行过程监测</em></div>
+  <div class="band-bd g-out">
+    <div class="chip"><b>自有渠道</b><i>手厅 / 10086 外呼 / 网格通 / 营业厅（店） / 短信</i></div>
+    <div class="chip"><b>线下执行队伍</b><i>网格长 · 网格人员 · 直销（抢单池 + 待处理工单）</i></div>
+    <div class="chip"><b>执行过程实时监测</b><i>工单看板 · 执行异常预警 · 逾期提醒</i></div>
+    <div class="chip add"><b>端到端可视化</b><i>新增：活动 ID 全链路追踪（洞察→策略→调度→评估）</i></div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="band-hd"><span>④ 评估与沉淀：全局复盘 → 资产反哺</span><em>效果数据由评估中心统一计算，策略中心只接收与沉淀（不重复计算口径）</em></div>
+  <div class="band-bd g-out">
+    <div class="chip opt"><b>全生命周期效能评估</b><i>优化：场景 / 客群 / 产品 / 渠道 / 时机五维评估视图</i></div>
+    <div class="chip"><b>可视化评估</b><i>策略分析（14 列执行指标 · 区域钻取 · 导出）</i></div>
+    <div class="chip add"><b>归因分析</b><i>新增：命中根因、客群特征、渠道 / 话术 / 产品的影响与关联强度</i></div>
+    <div class="chip opt"><b>全局复盘与举措输出</b><i>优化：优秀策略沉淀 → 模板 / 最佳实践 → 提升举措反哺下一轮定策</i></div>
+  </div>
+  <div class="band-bd">
+    <div class="loop">
+      <b>闭环：</b>洞察发现问题 → 策略给出方案 → 调度完成执行 → 评估检验效果 → 沉淀形成资产 → <b>资产反哺新策略</b>（评估回流接口待立项，本期先用"一键回流"过渡）
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>图纸参照</b>：本图参照北京移动《三滚规划-运营平台专题》"策略中心（1）：逐步实现从人工→半自动→AI 的智慧运营演进"，并按新疆实际做了三点适配——① 左侧洞察输入替换为新疆已上线的 AI 指标监控预警 / AI 洞察管理 V8.0 / 商机管理体系；② 渠道与执行侧按新疆实际（网格通、10086 外呼、营业厅、网格队伍）落地，合作渠道（微信 / 支付宝 / 抖音 / 美团）标注为待建；③ 三阶段演进标注新疆所处位置（阶段① 为基线、阶段② 为本期建设目标、阶段③ 为规划期），并把"历史效果参照、AI 定策比选、活动配置统一、AI 复盘沉淀"作为阶段②的必成项。
+  <b>配套文档</b>：《策略中心功能架构方案 V1.0》（第一、六章为架构与能力清单），《策略中心优化方案 V1.0》（页面级改造方案与分期）。
+</div>
+<!--INSERT-->
+</body>
+</html>

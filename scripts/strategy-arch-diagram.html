@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>策略中心功能架构图（三色标注）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2400px; background: #FFFFFF; color: #1F2937;
+    font-family: "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", sans-serif; padding: 30px 38px 34px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid #1F2937; padding-bottom: 12px; }
+  .title { font-size: 33px; font-weight: 700; letter-spacing: 1px; }
+  .title span { font-size: 16px; font-weight: 400; color: #6B7280; margin-left: 12px; letter-spacing: 0; }
+  .legend { display: flex; gap: 20px; align-items: center; font-size: 14px; color: #374151; }
+  .legend .lg { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 26px; height: 15px; border-radius: 3px; display: inline-block; }
+  .sw.done { background: #E8EAED; border: 1.4px solid #9AA0A6; }
+  .sw.opt { background: #FFF1DC; border: 1.6px solid #E8A33D; }
+  .sw.add { background: #E4F0FE; border: 1.6px solid #2F7DE1; }
+  .sw.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; }
+  .layer { margin-top: 16px; display: flex; align-items: stretch; gap: 12px; }
+  .layer-tag { width: 44px; flex: 0 0 44px; border-radius: 5px; display: flex;
+    align-items: center; justify-content: center; color: #FFFFFF; font-size: 15px; font-weight: 700;
+    line-height: 1.1; text-align: center; writing-mode: vertical-rl; letter-spacing: 4px; }
+  .tag-in { background: #5B6B7F; }
+  .tag-core { background: #1F3A5F; }
+  .tag-out { background: #2A6E5A; }
+  .tag-base { background: #6B5B7B; }
+  .row-elem { grid-template-columns: repeat(3, 1fr); margin-top: 10px; }
+  .row-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .lgbox { border: 1.4px solid #C7CDD6; border-left: 5px solid #1F3A5F; border-radius: 5px; padding: 10px 12px; background: #FBFCFE; }
+  .lgbox h5 { font-size: 14px; color: #1F3A5F; margin-bottom: 6px; }
+  .lgbox p { font-size: 12.4px; color: #4B5563; line-height: 1.68; }
+  .lgbox p b { color: #1F2937; }
+  .layer-body { flex: 1; }
+  .row { display: grid; gap: 10px; }
+  .row-in { grid-template-columns: repeat(7, 1fr); }
+  .row-dom { grid-template-columns: repeat(4, 1fr); }
+  .row-kb { grid-template-columns: repeat(5, 1fr); margin-top: 10px; }
+  .row-out { grid-template-columns: repeat(3, 1fr); }
+  .row-base { grid-template-columns: repeat(4, 1fr); }
+  .card { border: 1.6px solid #C7CDD6; border-radius: 6px; background: #FFFFFF; overflow: hidden; height: 100%; }
+  .card-hd { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px;
+    background: #F3F5F8; border-bottom: 1.4px solid #C7CDD6; font-size: 16px; font-weight: 700; color: #1F3A5F; }
+  .card-hd em { font-style: normal; font-size: 12px; font-weight: 400; color: #6B7280; }
+  .card-bd { padding: 9px; display: grid; gap: 7px; }
+  .chips-2 { grid-template-columns: repeat(2, 1fr); }
+  .chips-1 { grid-template-columns: repeat(1, 1fr); }
+  .chip { border-radius: 4px; padding: 9px 11px; border: 1.4px solid #9AA0A6; background: #E8EAED; color: #202124; }
+  .chip b { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .chip i { display: block; font-style: normal; font-size: 12px; color: #5F6B7A; margin-top: 4px; line-height: 1.5; }
+  .chip.opt { background: #FFF1DC; border-color: #E8A33D; color: #7A4B00; }
+  .chip.opt i { color: #96671C; }
+  .chip.add { background: #E4F0FE; border-color: #2F7DE1; color: #12457F; }
+  .chip.add i { color: #3C6FA8; }
+  .chip.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; color: #4A5568; }
+  .chip.tbd i { color: #7A8699; }
+  .flow { text-align: center; color: #9AA0A6; font-size: 20px; line-height: 16px; margin: 2px 0; }
+  .mainline { margin-top: 16px; border: 1.6px solid #1F3A5F; border-radius: 6px; padding: 12px 16px; background: #F7F9FC; }
+  .mainline h4 { font-size: 16px; color: #1F3A5F; margin-bottom: 9px; }
+  .states { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+  .state { border: 1.4px solid #1F3A5F; background: #FFFFFF; border-radius: 20px; padding: 6px 14px; font-size: 14px; color: #1F3A5F; white-space: nowrap; }
+  .state.add { border-color: #2F7DE1; background: #E4F0FE; color: #12457F; }
+  .arrow { color: #1F3A5F; font-size: 16px; }
+  .note { margin-top: 14px; font-size: 13px; color: #6B7280; line-height: 1.7; border-top: 1.4px solid #E5E7EB; padding-top: 10px; }
+  .note b { color: #1F2937; }
+  .count { display: flex; gap: 26px; font-size: 14px; color: #374151; margin-top: 10px; }
+  .count b { font-size: 20px; margin-right: 5px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">新疆市场运营平台 · 策略中心功能架构图<span>标注：已实现 / 已实现待增强 / 未实现新建 / 未实现待接口立项　（运营平台原型代码级核实 + 策略中心优化方案 V1.0）</span></div>
+  <div class="legend">
+    <div class="lg"><span class="sw done"></span>已实现（可点通）</div>
+    <div class="lg"><span class="sw opt"></span>已实现 · 待增强</div>
+    <div class="lg"><span class="sw add"></span>未实现 · 本轮新建</div>
+    <div class="lg"><span class="sw tbd"></span>未实现 · 待接口立项</div>
+  </div>
+</div>
+
+<div class="count">
+  <div><b>61</b>项能力项</div>
+  <div>已实现 <b>29</b>项（47.5%）</div>
+  <div>待增强 <b>15</b>项（24.6%）</div>
+  <div>新建 <b>13</b>项（21.3%）</div>
+  <div>待接口立项 <b>4</b>项（6.6%）</div>
+</div>
+
+<!-- 输入侧 -->
+<div class="layer">
+  <div class="layer-tag tag-in">输入侧</div>
+  <div class="layer-body row row-in">
+    <div class="chip"><b>指标异常信号</b><i>洞察中心 · AI 指标监控预警</i></div>
+    <div class="chip"><b>诊断结论</b><i>洞察中心 · AI 洞察管理</i></div>
+    <div class="chip"><b>风险客群清单</b><i>洞察中心 · 客群标签平台</i></div>
+    <div class="chip"><b>商机数据</b><i>商机池 / 客群商机 / 商机分类</i></div>
+    <div class="chip"><b>外部工单与活动需求</b><i>IOP 平台 / 集团一级平台</i></div>
+    <div class="chip opt"><b>沉淀资产反哺</b><i>效果库 / 模板 / 最佳实践（优化：可被定策引用）</i></div>
+    <div class="chip add"><b>自下而上诉求</b><i>地市 / 一线提报（新增：流程约定承接）</i></div>
+  </div>
+</div>
+<div class="flow">▼</div>
+
+<!-- 策略中心：四大能力域 + 要素 + 知识底座 -->
+<div class="layer">
+  <div class="layer-tag tag-core">策略中心</div>
+  <div class="layer-body">
+    <div class="row row-dom">
+
+      <div class="card">
+        <div class="card-hd"><span>① 策略管理</span><em>治理层 · 约束所有出站活动</em></div>
+        <div class="card-bd chips-2">
+          <div class="chip"><b>与洞察中心对接</b><i>接收诊断页（受理 / 批量受理）</i></div>
+          <div class="chip"><b>手动配置策略</b><i>策略库新增 / 编辑</i></div>
+          <div class="chip"><b>策略版本与上下架</b><i>策略版本页 + 策略库</i></div>
+          <div class="chip"><b>策略库 7 层结构</b><i>策略库管理</i></div>
+          <div class="chip opt"><b>策略审批</b><i>优化：由调度页内嵌抽出独立审批页</i></div>
+          <div class="chip opt"><b>AI 策略分析并初步制定</b><i>优化：由推荐雏形升级为独立定策环节</i></div>
+          <div class="chip add"><b>策略统筹</b><i>新增：优先级排序 + 产能预估</i></div>
+          <div class="chip add"><b>策略控制</b><i>新增：防打扰 / 名单 / 时段 / 互斥 / 抢占</i></div>
+          <div class="chip add"><b>策略-客群匹配规则</b><i>新增：哪条策略给哪个客群的显性化</i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span>② 策略制定</span><em>定策链路 · 由三步扩为五步</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>① 接收诊断</b><i>接收诊断页（受理 / 批量受理）</i></div>
+          <div class="chip opt"><b>① 诊断处置补全</b><i>优化：补拒收 / 转派 / 忽略</i></div>
+          <div class="chip add"><b>② 历史效果参照</b><i>新增：相似策略 + 历史达成率 / 健康度</i></div>
+          <div class="chip add"><b>③ AI 定策</b><i>新增：2-3 个候选方案 + 置信度 + 推荐依据</i></div>
+          <div class="chip add"><b>③ 方案比选</b><i>新增：多方案横向对比表 → 选定方案</i></div>
+          <div class="chip"><b>④ 策略编辑</b><i>策略匹配页（客群 / 产品 / 话术 / 优先级）</i></div>
+          <div class="chip"><b>④ 可视化编辑器</b><i>页面编辑器（文案可视化调整）</i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span>③ 活动配置</span><em>三类活动统一配置入口</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>IOP 普通营销配置</b><i>条件设置 → 拆分客群 → 提交审批</i></div>
+          <div class="chip"><b>剧本营销配置</b><i>多波次流程画布（幕 / 节点 / 波次规则）</i></div>
+          <div class="chip"><b>网格通活动配置</b><i>网格范围 / 执行角色 / 任务包 / 时限</i></div>
+          <div class="chip add"><b>活动配置统一页</b><i>新增：三类活动一个页面统一配置</i></div>
+          <div class="chip add"><b>活动实例（全局活动 ID）</b><i>新增：状态机 + 统一字段，供调度与评估消费</i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span>④ 策略沉淀</span><em>资产反哺 · 客户最关注</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>效果库</b><i>历史效果记录（达成率 / 健康度 / 改善幅度）</i></div>
+          <div class="chip opt"><b>效果回流接收</b><i>优化：一键回流 → 评估回流接口自动入库</i></div>
+          <div class="chip add"><b>AI 复盘</b><i>新增：成效结论 / 关键归因 / 改进建议 / 模板候选</i></div>
+          <div class="chip"><b>策略模板管理</b><i>模板库列表与维护</i></div>
+          <div class="chip opt"><b>应用此模板带入定策</b><i>优化：模板一键带入第 ③ 步并累计引用次数</i></div>
+          <div class="chip opt"><b>最佳实践库</b><i>优化：补齐入选标准与候选→评审→发布→归档</i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row row-elem">
+
+      <div class="card">
+        <div class="card-hd"><span>⑤ 策略要素 · 产品 / 方案</span><em>决定“卖什么” · 随活动下发</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>产品与方案配置</b><i>策略库「产品 / 方案」层：产品选择 · 优惠幅度 · 方案组合</i></div>
+          <div class="chip opt"><b>产品 / 方案要素模板化</b><i>优化：高频组合沉淀为要素模板，一键复用到新策略</i></div>
+          <div class="chip add"><b>要素与产品库口径联动</b><i>新增：产品编码 / 优惠口径与产品运营统一，避免策略内二次维护</i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span>⑥ 策略要素 · 营销话术</span><em>决定“怎么说” · 一线可执行</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>话术模板配置</b><i>策略库「营销话术」层：按渠道维护话术 + 可视化页面编辑器改文案</i></div>
+          <div class="chip opt"><b>AI 话术生成</b><i>优化：聚智平台大模型按客群 / 场景生成话术，人工确认后入库</i></div>
+          <div class="chip add"><b>话术 A/B 与版本对比</b><i>新增：同一策略多话术并行投放，按转化率择优沉淀</i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span>⑦ 策略要素 · 渠道适配</span><em>决定“在哪说” · 与调度协同</em></div>
+        <div class="card-bd chips-1">
+          <div class="chip"><b>渠道适配配置</b><i>策略库「渠道适配」层：渠道优先级 + 可执行时段（外呼 / 短信 / APP 弹窗 / 营业厅 / 微信 / 装维触点）</i></div>
+          <div class="chip opt"><b>渠道优先级与频次统一约束</b><i>优化：渠道优先级由策略控制统一约束，避免与调度侧重复配置</i></div>
+          <div class="chip add"><b>触点协同规则</b><i>新增：多触点互斥 / 接力 / 优先规则，交由调度中心按规则选择触点</i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row row-kb">
+      <div class="chip"><b>根因库管理</b><i>6 大类根因 · 诊断标签条件 · 置信度</i></div>
+      <div class="chip opt"><b>关联关系管理</b><i>优化：AI 复盘回写关联强度与置信度</i></div>
+      <div class="chip"><b>标签字典管理</b><i>标签口径唯一来源</i></div>
+      <div class="chip"><b>市场事件管理</b><i>竞品 / 市场事件约束条件</i></div>
+      <div class="chip"><b>策略知识库 · 知识中心</b><i>知识共享与审核协作</i></div>
+    </div>
+  </div>
+</div>
+<div class="flow">▼</div>
+<!-- 输出侧 -->
+<div class="layer">
+  <div class="layer-tag tag-out">输出侧</div>
+  <div class="layer-body row row-out">
+    <div class="card">
+      <div class="card-hd"><span>策略中心门户</span><em>对内入口</em></div>
+      <div class="card-bd chips-1">
+        <div class="chip opt"><b>策略中心总览</b><i>优化：统计仪表盘 → 活动生命周期看板 + 我的待办 + 健康度 + 资产概览</i></div>
+        <div class="chip"><b>剧本营销入口</b><i>列表页 + 编排页（全屏画布）</i></div>
+        <div class="chip tbd"><b>接收诊断接口</b><i>待立项：洞察 → 策略 自动推送</i></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span>调度中心</span><em>谁执行 · 怎么派</em></div>
+      <div class="card-bd chips-1">
+        <div class="chip"><b>五类调度已具备</b><i>指标调度 / 策略调度 / 客群调度 / 商机派单 / 区域攻坚调度</i></div>
+        <div class="chip"><b>策略调度出站提交</b><i>策略调度页（派发系统三选一 + 后评估配置）</i></div>
+        <div class="chip tbd"><b>调度接收接口</b><i>待立项：活动实例自动流转至调度待办</i></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span>评估中心</span><em>效果如何 · 是否达标</em></div>
+      <div class="card-bd chips-1">
+        <div class="chip"><b>策略分析</b><i>14 列策略执行指标 · 区域钻取 · 本级/全口径 · XLSX 导出</i></div>
+        <div class="chip tbd"><b>执行结果接口</b><i>待立项：调度 → 评估 执行结果回传</i></div>
+        <div class="chip tbd"><b>评估回流接口</b><i>待立项：评估 → 策略 效果自动回流</i></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="flow">▼</div>
+
+<!-- 支撑底座 -->
+<div class="layer">
+  <div class="layer-tag tag-base">支撑底座</div>
+  <div class="layer-body row row-base">
+    <div class="chip opt"><b>AI 大模型 / 智能体</b><i>优化：根因分析 · 策略生成 · 话术生成 · AI 复盘（聚智平台能力调用）</i></div>
+    <div class="chip"><b>数据底座</b><i>大数据平台标签库 / 指标库 / 指标字典（口径唯一）</i></div>
+    <div class="chip opt"><b>置信度展示与口径说明</b><i>优化：AI 推荐结论统一展示置信度 + 计算口径 Tooltip</i></div>
+    <div class="chip opt"><b>权限与操作审计</b><i>优化：页面级权限 + 审批 / 复核岗位区分（RBAC 待立项）</i></div>
+  </div>
+</div>
+
+<!-- 主线 -->
+<div class="mainline">
+  <h4>一条主线：活动实例（全局活动 ID）贯穿四个中心，状态全程可追踪</h4>
+  <div class="states">
+    <span class="state">洞察中</span><span class="arrow">▶</span>
+    <span class="state">制定中</span><span class="arrow">▶</span>
+    <span class="state">调度中</span><span class="arrow">▶</span>
+    <span class="state">执行中</span><span class="arrow">▶</span>
+    <span class="state">评估中</span><span class="arrow">▶</span>
+    <span class="state">沉淀中</span><span class="arrow">▶</span>
+    <span class="state">已闭环</span>
+    <span class="arrow">　｜　</span>
+    <span class="state add">活动全链路追踪（新增）：以活动 ID 为主线的时间轴视图</span>
+    <span class="arrow">　｜　</span>
+    <span class="state">两个回流：诊断结论正向流入 ／ 效果数据反向回流</span>
+  </div>
+</div>
+
+<div class="row-legend">
+  <div class="lgbox">
+    <h5>输入侧：策略从哪里来</h5>
+    <p><b>指标异常信号</b>（洞察中心 · AI 指标监控预警）、<b>诊断结论</b>（洞察中心 · AI 洞察管理 / 根因分析）、<b>风险客群清单</b>（客群标签平台）、<b>商机数据</b>（商机池 / 客群商机）四类输入统一收口到策略中心，由「策略管理」的接收诊断环节承接；<b>外部工单与活动需求</b>（IOP 平台 / 集团一级平台）作为外部来源，<b>沉淀资产</b>（效果库 / 模板 / 最佳实践）与<b>一线自下而上诉求</b>作为补充输入。协同方式：前三类走「接收诊断接口」（本期以页面受理承接），外部需求走导入与人工受理。</p>
+  </div>
+  <div class="lgbox">
+    <h5>策略中心：每块干什么</h5>
+    <p><b>策略管理</b>＝治理层，管版本、审批、控制（防打扰 / 名单 / 时段 / 互斥）与统筹排序，约束所有出站活动；<b>策略制定</b>＝把诊断结论变成可执行方案，五步链路（接收诊断 → 历史效果参照 → AI 定策 → 方案比选 → 策略编辑）；<b>策略要素</b>＝把方案落到产品 / 话术 / 渠道三要素，随活动一起下发；<b>活动配置</b>＝三类活动（IOP 普通营销 / 剧本营销 / 网格通）的统一出口，产出带全局活动 ID 的活动实例；<b>策略沉淀</b>＝效果回流 → 复盘 → 模板与最佳实践，反哺下一次定策；<b>知识底座</b>＝根因库 / 关联关系 / 标签字典 / 市场事件，为全流程提供口径与依据。</p>
+  </div>
+  <div class="lgbox">
+    <h5>输出侧与底座：怎么和周边协同</h5>
+    <p>活动实例以<b>统一活动 ID</b> 输出到<b>调度中心</b>（五类调度派发、触点按渠道适配与协同规则执行）；执行结果进入<b>评估中心</b>（策略分析 14 项执行指标、区域钻取、本级 / 全口径对比）；再由评估回流把效果写回<b>策略沉淀</b>与根因 / 策略置信度。<b>接收诊断、调度接收、执行结果、评估回流</b>四个跨系统接口是打通三个中心的关键，页面侧已就绪、依赖接口立项。底座由 AI 大模型与智能体（根因分析 / 策略生成 / 话术生成 / AI 复盘，能力来自聚智平台）、数据底座（标签库 / 指标库 / 指标字典）、置信度与口径说明、权限与操作审计共同支撑。</p>
+  </div>
+</div>
+
+<div class="note">
+  <b>颜色判定口径（已实现 / 未实现）</b>：<b>灰底</b>＝已实现，原型中路由存在且能力可点通（代码级核实）；<b>橙底</b>＝已实现但需增强，页面已存在、缺关键字段 / 交互 / 闭环；<b>蓝底</b>＝未实现，本轮新建；<b>白底虚框</b>＝未实现，页面侧已就绪、依赖跨系统接口立项。
+  <b>阶段实现计划</b>：四期建设内容见《策略中心阶段实现计划图》，分期与《策略中心优化方案 V1.0》第七、八章一致，逐项明细见《策略中心功能架构方案 V1.0》第六章能力清单（含现状依据）。
+</div>
+<!--INSERT-->
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>策略中心现状与优化架构对比图</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2400px; background: #FFFFFF; color: #1F2937;
+    font-family: "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", sans-serif; padding: 30px 38px 34px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid #1F2937; padding-bottom: 12px; }
+  .title { font-size: 33px; font-weight: 700; letter-spacing: 1px; }
+  .title span { display: block; font-size: 15px; font-weight: 400; color: #6B7280; margin-top: 8px; letter-spacing: 0; }
+  .legend { display: flex; gap: 18px; align-items: center; font-size: 13.5px; color: #374151; }
+  .sw { width: 26px; height: 15px; border-radius: 3px; display: inline-block; }
+  .sw.done { background: #E8EAED; border: 1.4px solid #9AA0A6; }
+  .sw.opt { background: #FFF1DC; border: 1.6px solid #E8A33D; }
+  .sw.add { background: #E4F0FE; border: 1.6px solid #2F7DE1; }
+  .sw.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; }
+  .sw.gap { background: #FDECEA; border: 1.4px dashed #C0392B; }
+  .sec { margin-top: 20px; }
+  .sec-hd { display: flex; align-items: baseline; gap: 12px; border-left: 9px solid #1F3A5F; padding-left: 12px; margin-bottom: 12px; }
+  .sec-hd h3 { font-size: 20px; color: #1F3A5F; letter-spacing: .5px; }
+  .sec-hd em { font-style: normal; font-size: 13px; color: #6B7280; }
+  .cmp { display: grid; grid-template-columns: 1fr 70px 1fr; align-items: stretch; }
+  .col { border: 1.8px solid #C7CDD6; border-radius: 8px; overflow: hidden; }
+  .col.asis { border-color: #8892A0; }
+  .col.tobe { border-color: #2F7DE1; }
+  .col-hd { padding: 10px 15px; color: #FFFFFF; font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
+  .col.asis .col-hd { background: #6B7480; }
+  .col.tobe .col-hd { background: #2F7DE1; }
+  .col-hd em { font-style: normal; font-size: 12px; font-weight: 400; opacity: .92; }
+  .col-bd { padding: 12px; display: grid; gap: 10px; background: #FBFCFD; }
+  .mini { display: grid; gap: 8px; }
+  .mini-2 { grid-template-columns: repeat(2, 1fr); }
+  .mini-3 { grid-template-columns: repeat(3, 1fr); }
+  .mini-4 { grid-template-columns: repeat(4, 1fr); }
+  .box { border: 1.4px solid #C7CDD6; border-radius: 5px; background: #FFFFFF; padding: 8px 10px; }
+  .box h6 { font-size: 13.5px; color: #1F3A5F; margin-bottom: 4px; }
+  .box p { font-size: 12px; color: #4A5568; line-height: 1.65; }
+  .box.gray { background: #F1F2F4; border-color: #C6CBD3; }
+  .box.gray h6 { color: #5F6B7A; }
+  .box.blue { background: #E9F2FE; border-color: #2F7DE1; }
+  .box.blue h6 { color: #12457F; }
+  .box.orange { background: #FFF6E8; border-color: #E8A33D; }
+  .box.orange h6 { color: #96671C; }
+  .box.purple { background: #F3EFF8; border-color: #6B5B7B; }
+  .box.purple h6 { color: #4E4060; }
+  .box.red { background: #FDECEA; border: 1.4px dashed #C0392B; }
+  .box.red h6 { color: #9B2C1F; }
+  .stat { display: flex; gap: 18px; align-items: center; font-size: 13px; color: #374151; padding: 9px 13px; border: 1.4px solid #D8DEE6; border-radius: 5px; background: #FFFFFF; }
+  .stat b { font-size: 19px; margin-right: 5px; }
+  .stat .s-direct { color: #2E7D52; }
+  .stat .s-indirect { color: #B5761B; }
+  .stat .s-none { color: #6B7480; }
+  .stat .s-gap { color: #C0392B; }
+  .arrow-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  .arrow-col .big { font-size: 40px; color: #2F7DE1; line-height: 1; }
+  .arrow-col .lbl { writing-mode: vertical-rl; font-size: 13px; letter-spacing: 3px; color: #2F7DE1; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1.3px solid #D8DEE6; padding: 8px 11px; font-size: 12.5px; line-height: 1.65; vertical-align: top; text-align: left; }
+  thead th { background: #F3F5F8; color: #1F3A5F; font-size: 13.5px; }
+  td.item { font-weight: 700; color: #1F2937; width: 236px; }
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 700; }
+  .chip.keep { background: #E8EAED; color: #40474F; }
+  .chip.enh { background: #FFF1DC; color: #96671C; }
+  .chip.fill { background: #EAF7EE; color: #2E7D52; }
+  .chip.new { background: #E4F0FE; color: #12457F; }
+  .chip.if { background: #FFFFFF; border: 1.3px dashed #7A8699; color: #4A5568; }
+  .note { margin-top: 14px; font-size: 13px; color: #6B7280; line-height: 1.75; border-top: 1.4px solid #E5E7EB; padding-top: 10px; }
+  .note b { color: #1F2937; }
+  .phase { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .ph { border: 1.4px solid #1F3A5F; border-top: 5px solid #1F3A5F; border-radius: 5px; padding: 9px 12px; background: #FFFFFF; }
+  .ph h6 { font-size: 13.5px; color: #1F3A5F; margin-bottom: 5px; }
+  .ph p { font-size: 12px; color: #4A5568; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">新疆市场运营平台 · 策略中心「现状 → 优化」架构对比图
+    <span>左侧为现状（原型代码级核实的事实），右侧为优化后目标（对应《策略中心功能架构图-三色标注》）；色标口径：灰＝已有、橙＝优化、蓝＝新增、白底虚框＝接口立项、红虚框＝现状断点</span>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw done"></span>已有</div>
+    <div class="lg"><span class="sw opt"></span>优化</div>
+    <div class="lg"><span class="sw add"></span>新增</div>
+    <div class="lg"><span class="sw tbd"></span>接口立项</div>
+    <div class="lg"><span class="sw gap"></span>现状断点</div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-hd"><h3>一、架构对比（现状侧 vs 优化侧）</h3><em>现状特征「资产齐、链路断」；优化补强集中在 4 个跨中心接口与 3 条域内闭环</em></div>
+  <div class="cmp">
+    <div class="col asis">
+      <div class="col-hd"><span>现状（As-Is）</span><em>3 直接 · 4 间接 · 6 无关联 · 4 断点</em></div>
+      <div class="col-bd">
+        <div class="mini mini-3">
+          <div class="box gray">
+            <h6>市场运营 · 运营场景</h6>
+            <p>指标调度（弹窗 · 无策略字段）<br/>策略调度（跳转匹配推荐）<br/>客群调度（弹窗 · 触客策略自由文本）</p>
+          </div>
+          <div class="box gray">
+            <h6>工作台 · 策略管理</h6>
+            <p>根因库管理 / 策略库管理 / 关联关系查询<br/><span style="color:#7A8699">接收诊断 · 策略沉淀 · 跨中心协作（演示）· 网格通</span></p>
+          </div>
+          <div class="box gray">
+            <h6>能力中心 · 三中心</h6>
+            <p>洞察中心（无关联）<br/>调度中心（无关联）<br/>评估中心（数据层关联、缺入口）</p>
+          </div>
+        </div>
+        <div class="stat">
+          <span><b class="s-direct">3</b>条直接关联</span>
+          <span><b class="s-indirect">4</b>条间接关联</span>
+          <span><b class="s-none">6</b>条无关联</span>
+          <span><b class="s-gap">4</b>处断点</span>
+          <span style="color:#7A8699">唯一可用主链路：策略库 → 策略调度（匹配推荐）</span>
+        </div>
+        <div class="mini mini-2" id="asisGaps"></div>
+      </div>
+    </div>
+    <div class="arrow-col"><div class="big">➜</div><div class="lbl">优化补强</div></div>
+    <div class="col tobe">
+      <div class="col-hd"><span>优化后（To-Be）</span><em>61 项能力：已实现 29 · 待增强 15 · 新建 13 · 接口立项 4</em></div>
+      <div class="col-bd">
+        <div class="mini mini-4">
+          <div class="box blue">
+            <h6>L0 输入侧</h6>
+            <p>指标异常信号 / 诊断结论 / 风险客群 / 商机数据 / 外部活动需求 / 自下而上诉求</p>
+          </div>
+          <div class="box orange">
+            <h6>L1 策略中心四域</h6>
+            <p>策略管理 · 策略制定<br/>活动配置 · 策略沉淀<br/>+ 策略知识底座（根因库 / 策略库 / 关联关系 / 标签字典 / 事件库）</p>
+          </div>
+          <div class="box blue">
+            <h6>L2 输出侧</h6>
+            <p>策略中心门户<br/>调度中心（接口）<br/>评估中心（接口）</p>
+          </div>
+          <div class="box purple">
+            <h6>L3 支撑底座</h6>
+            <p>AI 大模型与智能体<br/>数据底座（标签 / 指标口径）<br/>置信度与口径说明 · 权限与审计</p>
+          </div>
+        </div>
+        <div class="mini mini-3" id="tobeFixes"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-hd"><h3>二、关系逐项对比（现状 → 优化后）</h3><em>变化类型：保持 / 增强 / 补齐 / 新增 / 接口立项</em></div>
+  <table id="cmpTable">
+    <thead>
+      <tr>
+        <th>关系项</th>
+        <th>现状（As-Is）</th>
+        <th>优化后（To-Be）</th>
+        <th>变化类型</th>
+      </tr>
+    </thead>
+    <tbody id="cmpBody"></tbody>
+  </table>
+  <div class="note" id="cmpNote"></div>
+</div>
+
+<script>
+const asisGaps = [
+  ['断点 1｜策略库无「发起调度」入口', '策略调度入口只在运营页分析面板，策略库侧无发起入口'],
+  ['断点 2｜根因指标双轨维护', '根因库配置的关联指标未被匹配推荐读取'],
+  ['断点 3｜触客策略靠手写', '客群调度触客策略为自由文本，策略资产无法复用'],
+  ['断点 4｜跨中心接口未立项', '接收诊断 / 调度 / 执行结果 / 评估回流均为演示实现'],
+];
+
+const tobeFixes = [
+  ['① 新增 4 个跨中心接口', '接收诊断接口 · 调度接收接口 · 执行结果接口 · 评估回流接口'],
+  ['② 打通 3 条域内闭环', '策略库 → 策略调度发起 · 根因库 → 定策数据源 · 客群调度 → 策略资产复用'],
+  ['③ 治理与统筹增强', '策略审批 · 策略控制 · 策略-客群匹配规则 · 策略统筹 · 置信度与口径说明'],
+];
+
+const cmpRows = [
+  {
+    item: '根因库 → 关联关系查询',
+    asis: '只读引用（指标↔根因、客群↔根因两类关系取自根因库配置）',
+    tobe: '保持只读定位；新增被引用次数统计与根因优先级回写',
+    chg: '保持', cls: 'keep', ph: '一期',
+  },
+  {
+    item: '策略库 → 关联关系查询',
+    asis: '只读引用（指标/客群/根因 ↔ 策略 三类关系取自策略库关联配置）',
+    tobe: '保持只读定位；关联关系变更后回写并保留变更记录',
+    chg: '保持', cls: 'keep', ph: '一期',
+  },
+  {
+    item: '策略库 → 策略调度',
+    asis: '仅「匹配推荐」一条链路可用；策略库列表/详情无发起调度入口',
+    tobe: '策略库可直接发起策略调度；调度单回填策略来源，结果回写运行数据与使用记录',
+    chg: '增强', cls: 'enh', ph: '一期',
+  },
+  {
+    item: '根因库 → 策略调度',
+    asis: '双轨：匹配推荐的根因指标为页面内固定列表，未读取根因库',
+    tobe: '以根因库为唯一数据源；匹配推荐与 AI 定策展示根因来源、关联指标与置信度',
+    chg: '补齐', cls: 'fill', ph: '二期',
+  },
+  {
+    item: '策略库 → 客群调度',
+    asis: '无关联：客群调度「触客策略」为自由文本（上限 500 字）',
+    tobe: '从策略库选择策略并带入产品/话术/渠道/适用约束；调度后回写使用记录与效果',
+    chg: '新增', cls: 'new', ph: '二期',
+  },
+  {
+    item: '策略资产 → 指标调度',
+    asis: '无关联：指标调度为管理类工单，弹窗不含策略字段',
+    tobe: '保持无关联（指标类工单不含策略内容）；纳入统一活动台账并接受调度前策略控制校验',
+    chg: '保持', cls: 'keep', ph: '三期',
+  },
+  {
+    item: '关联关系查询 → 三类调度 / 三中心',
+    asis: '无关联：仅提供只读查询，不发起调度、不对外提供接口',
+    tobe: '保持只读定位；新增关系网络图视图与实体详情跳转，作为定策与回溯的统一入口',
+    chg: '增强', cls: 'enh', ph: '二期',
+  },
+  {
+    item: '洞察中心 → 策略中心',
+    asis: '间接：接收诊断页以页面内模拟数据承接诊断结论，无真实推送通道',
+    tobe: '接收诊断接口：诊断结论推送 + 受理状态回传；定策环节引用历史效果与洞察结论',
+    chg: '接口立项', cls: 'if', ph: '四期',
+  },
+  {
+    item: '策略中心 → 调度中心',
+    asis: '无关联：调度总览无策略维度；三类调度工单实际落在工作台·调度管理',
+    tobe: '调度接收接口：活动实例提交调度中心，回传拆单结果与执行进度，双向对齐工单状态',
+    chg: '接口立项', cls: 'if', ph: '四期',
+  },
+  {
+    item: '策略中心 → 评估中心',
+    asis: '间接：策略分析子单含策略 ID 与来源，但页面无跳转入口',
+    tobe: '执行结果接口 + 评估回流接口 + 双向跳转入口（策略 ↔ 评估），评估结论回流策略沉淀',
+    chg: '接口立项', cls: 'if', ph: '四期',
+  },
+  {
+    item: '策略中心 ↔ 知识中心',
+    asis: '间接：协作页为演示实现（知识引用、上架申请仅提示文案）',
+    tobe: '知识引用与上架协作流程打通，策略可直接引用知识条目，优秀策略经评审进入知识库',
+    chg: '接口立项', cls: 'if', ph: '四期',
+  },
+  {
+    item: '沉淀资产 → 定策链路',
+    asis: '间接：效果库、模板、最佳实践与定策动作无入口关联',
+    tobe: '模板一键带入定策、效果库反哺 AI 定策、最佳实践评审后入库并沉淀为策略模板',
+    chg: '新增', cls: 'new', ph: '一期 / 二期',
+  },
+];
+
+document.getElementById('asisGaps').innerHTML = asisGaps
+  .map((g) => `<div class="box red"><h6>${g[0]}</h6><p>${g[1]}</p></div>`)
+  .join('');
+
+document.getElementById('tobeFixes').innerHTML = tobeFixes
+  .map((g) => `<div class="box blue"><h6>${g[0]}</h6><p>${g[1]}</p></div>`)
+  .join('');
+
+document.getElementById('cmpBody').innerHTML = cmpRows
+  .map(
+    (r) => `<tr>
+      <td class="item">${r.item}</td>
+      <td>${r.asis}</td>
+      <td>${r.tobe}</td>
+      <td><span class="chip ${r.cls}">${r.chg}</span></td>
+    </tr>`
+  )
+  .join('');
+
+document.getElementById('cmpNote').innerHTML = `
+  <div><b>口径说明</b>：优化后能力清单共 61 项（已实现 29 / 待增强 15 / 新建 13 / 接口立项 4），本表 12 条关系为其中与「策略管理三菜单 × 三类调度 × 能力中心三中心」直接相关的部分；其余能力项见《策略中心功能架构方案 V1.0》第六章。</div>
+`;
+</script>
+</body>
+</html>

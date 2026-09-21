@@ -1,0 +1,370 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import {
+  Edit2, Save, X, Move, Type, Palette, Layout, AlignCenter, Eye, EyeOff, Undo, Redo, FileText
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import PropertyPanel from './PropertyPanel';
+import ChangesPanel from './ChangesPanel';
+
+interface ElementInfo {
+  element: HTMLElement;
+  tagName: string;
+  className: string;
+  styles: CSSStyleDeclaration;
+  attributes: Record<string, string>;
+  bounds: DOMRect;
+}
+
+interface PageEditorProps {
+  enabled?: boolean;
+  onSave?: (changes: any[]) => void;
+  children: React.ReactNode;
+}
+
+// 修改记录接口
+interface EditChange {
+  id: string;
+  selector: string;
+  type: 'style' | 'content' | 'attribute';
+  property: string;
+  value: string;
+  oldValue: string;
+  timestamp: number;
+  elementId?: string;
+  elementClass?: string;
+}
+
+export default function PageEditor({ enabled = false, onSave, children }: PageEditorProps) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<ElementInfo | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [changes, setChanges] = useState<EditChange[]>([]);
+  const [showChangesPanel, setShowChangesPanel] = useState(false);
+  const editorOverlayRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    setSelectedElement(null);
+  };
+
+  // 处理元素点击
+  const handleElementClick = (e: MouseEvent) => {
+    if (!isEditMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const target = e.target as HTMLElement;
+    if (!target || target.closest('.editor-panel') || target.closest('.editor-controls')) return;
+
+    // 获取元素信息
+    const elementInfo: ElementInfo = {
+      element: target,
+      tagName: target.tagName.toLowerCase(),
+      className: target.className,
+      styles: window.getComputedStyle(target),
+      attributes: Array.from(target.attributes).reduce((acc, attr) => {
+        acc[attr.name] = attr.value;
+        return acc;
+      }, {} as Record<string, string>),
+      bounds: target.getBoundingClientRect(),
+    };
+
+    setSelectedElement(elementInfo);
+    highlightElement(target);
+  };
+
+  // 高亮选中元素
+  const highlightElement = (element: HTMLElement) => {
+    // 移除之前的高亮
+    document.querySelectorAll('.editor-highlight').forEach(el => el.remove());
+
+    // 添加新高亮
+    const highlight = document.createElement('div');
+    highlight.className = 'editor-highlight';
+    highlight.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      border: 2px solid #0085D0;
+      background: rgba(0, 133, 208, 0.1);
+      z-index: 9998;
+    `;
+
+    const updateHighlight = () => {
+      const rect = element.getBoundingClientRect();
+      highlight.style.left = `${rect.left}px`;
+      highlight.style.top = `${rect.top}px`;
+      highlight.style.width = `${rect.width}px`;
+      highlight.style.height = `${rect.height}px`;
+    };
+
+    updateHighlight();
+    document.body.appendChild(highlight);
+
+    // 监听窗口大小变化
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
+    resizeObserverRef.current = new ResizeObserver(updateHighlight);
+    resizeObserverRef.current.observe(element);
+  };
+
+  // 清除高亮
+  const clearHighlight = () => {
+    document.querySelectorAll('.editor-highlight').forEach(el => el.remove());
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
+  };
+
+  // 记录修改
+  const recordChange = (
+    type: 'style' | 'content' | 'attribute',
+    property: string,
+    value: string,
+    oldValue: string
+  ) => {
+    if (!selectedElement) return;
+
+    const change: EditChange = {
+      id: `change-${Date.now()}-${Math.random()}`,
+      selector: selectedElement.element.id
+        ? `#${selectedElement.element.id}`
+        : `.${selectedElement.className.split(' ')[0]}`,
+      type,
+      property,
+      value,
+      oldValue,
+      timestamp: Date.now(),
+      elementId: selectedElement.element.id || undefined,
+      elementClass: selectedElement.className || undefined,
+    };
+
+    setChanges((prev) => [...prev, change]);
+    console.log('记录修改:', change);
+  };
+
+  // 更新元素样式
+  const updateElementStyle = (property: string, value: string) => {
+    if (!selectedElement) return;
+
+    const oldValue = selectedElement.styles.getPropertyValue(property);
+    selectedElement.element.style.setProperty(property, value);
+
+    // 记录修改
+    recordChange('style', property, value, oldValue);
+
+    highlightElement(selectedElement.element);
+  };
+
+  // 更新元素属性
+  const updateElementAttribute = (name: string, value: string) => {
+    if (!selectedElement) return;
+
+    const oldValue = selectedElement.attributes[name] || '';
+    selectedElement.element.setAttribute(name, value);
+
+    // 记录修改
+    recordChange('attribute', name, value, oldValue);
+
+    highlightElement(selectedElement.element);
+  };
+
+  // 更新元素内容
+  const updateElementContent = (value: string) => {
+    if (!selectedElement) return;
+
+    const oldValue = selectedElement.element.textContent || '';
+    selectedElement.element.textContent = value;
+
+    // 记录修改
+    recordChange('content', 'textContent', value, oldValue);
+
+    highlightElement(selectedElement.element);
+  };
+
+  // 保存更改
+  const handleSave = async () => {
+    if (changes.length === 0) {
+      alert('没有需要保存的修改');
+      return;
+    }
+
+    try {
+      // 调用API保存修改
+      const response = await fetch('/api/page-editor/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          changes,
+          pagePath: window.location.pathname,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(
+          `保存成功！\n\n已记录 ${changes.length} 处修改\n\n${result.hint || ''}`
+        );
+        console.log('保存结果:', result);
+
+        // 清空修改记录
+        setChanges([]);
+        setSelectedElement(null);
+        clearHighlight();
+      } else {
+        alert(`保存失败: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('保存失败:', error);
+      alert('保存失败，请查看控制台日志');
+    }
+  };
+
+  // 导出修改记录
+  const exportChanges = () => {
+    const report = changes
+      .map(
+        (change) =>
+          `${change.type.toUpperCase()}: ${change.property}\n` +
+          `  旧值: ${change.oldValue}\n` +
+          `  新值: ${change.value}\n` +
+          `  选择器: ${change.selector}\n`
+      )
+      .join('\n');
+
+    console.log('修改记录:\n', report);
+    alert(
+      `已导出 ${changes.length} 处修改到控制台\n\n` +
+      `请按F12打开控制台查看详细记录\n\n` +
+      `提示: 代码自动保存功能正在开发中\n当前需要手动修改代码文件`
+    );
+  };
+
+  // 清除修改记录
+  const clearChanges = () => {
+    if (changes.length === 0) return;
+    if (confirm(`确定要清除所有 ${changes.length} 条修改记录吗？`)) {
+      setChanges([]);
+    }
+  };
+    clearHighlight();
+  };
+
+  // 清除选中
+  const handleClear = () => {
+    setSelectedElement(null);
+    clearHighlight();
+  };
+
+  // 添加全局点击监听
+  useEffect(() => {
+    if (!isEditMode) {
+      clearHighlight();
+      return;
+    }
+
+    document.addEventListener('click', handleElementClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleElementClick, true);
+      clearHighlight();
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, [isEditMode]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      clearHighlight();
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  if (!enabled) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="relative min-h-screen">
+      {/* 编辑器控件 */}
+      <div className="fixed top-4 right-4 z-[9999] editor-controls">
+        <Card className="p-2 shadow-lg">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isEditMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={toggleEditMode}
+              className="flex items-center gap-2"
+            >
+              {isEditMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {isEditMode ? '退出编辑' : '开启编辑'}
+            </Button>
+
+            {isEditMode && selectedElement && (
+              <>
+                <div className="w-px h-6 bg-gray-300" />
+                <Button variant="outline" size="sm" onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-1" />
+                  保存
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleClear}>
+                  <X className="h-4 w-4 mr-1" />
+                  取消
+                </Button>
+              </>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* 编辑模式提示 */}
+      {isEditMode && (
+        <div className="fixed top-4 left-4 z-[9999] editor-controls">
+          <Card className="p-3 shadow-lg bg-blue-50 border-blue-200">
+            <div className="flex items-center gap-2 text-sm">
+              <Edit2 className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-blue-900">编辑模式已开启</span>
+              <span className="text-blue-600">- 点击任意元素进行编辑</span>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 页面内容 */}
+      {children}
+
+      {/* 属性编辑面板 */}
+      {isEditMode && selectedElement && (
+        <PropertyPanel
+          element={selectedElement}
+          onUpdateStyle={updateElementStyle}
+          onUpdateAttribute={updateElementAttribute}
+          onClose={handleClear}
+          onSave={handleSave}
+        />
+      )}
+
+      {/* 修改记录面板 */}
+      {isEditMode && changes.length > 0 && (
+        <ChangesPanel
+          changes={changes}
+          onClear={clearChanges}
+          onExport={exportChanges}
+          onSave={handleSave}
+        />
+      )}
+    </div>
+  );
+}

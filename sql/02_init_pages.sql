@@ -1,0 +1,148 @@
+-- 初始化页面数据（二级/三级）
+-- 1. 首页（属于首页场景）
+INSERT INTO pages (
+  page_code,
+  page_name,
+  page_type,
+  page_path,
+  scenario_id,
+  scenario_code,
+  scenario_name,
+  module_code,
+  module_name,
+  is_tree_page,
+  tree_config_id,
+  sort_order,
+  status,
+  description,
+  created_at,
+  updated_at
+) VALUES (
+  'HOME_PAGE',
+  '首页',
+  'portal',
+  '/',
+  (SELECT id FROM business_scenarios WHERE scenario_code = 'HOME'),
+  'HOME',
+  '首页',
+  'PORTAL',
+  '门户',
+  false,
+  '',
+  1,
+  'active',
+  '门户首页',
+  NOW(),
+  NOW()
+);
+
+-- 2. 运营总览（属于市场数智运营场景）
+INSERT INTO pages (
+  page_code,
+  page_name,
+  page_type,
+  page_path,
+  scenario_id,
+  scenario_code,
+  scenario_name,
+  module_code,
+  module_name,
+  is_tree_page,
+  tree_config_id,
+  sort_order,
+  status,
+  description,
+  created_at,
+  updated_at
+) VALUES (
+  'OPERATION_OVERVIEW',
+  '运营总览',
+  'operation',
+  '/operation/overview',
+  (SELECT id FROM business_scenarios WHERE scenario_code = 'MARKET_INTEL'),
+  'MARKET_INTEL',
+  '市场数智运营',
+  'OPERATION',
+  '运营',
+  false,
+  '',
+  1,
+  'active',
+  '运营总览页面',
+  NOW(),
+  NOW()
+);
+
+-- 3. 客户运营（属于市场数智运营场景）
+INSERT INTO pages (
+  page_code,
+  page_name,
+  page_type,
+  page_path,
+  scenario_id,
+  scenario_code,
+  scenario_name,
+  module_code,
+  module_name,
+  is_tree_page,
+  tree_config_id,
+  sort_order,
+  status,
+  description,
+  created_at,
+  updated_at
+) VALUES (
+  'CUSTOMER_OPERATION',
+  '客户运营',
+  'operation',
+  '/operation/customer',
+  (SELECT id FROM business_scenarios WHERE scenario_code = 'MARKET_INTEL'),
+  'MARKET_INTEL',
+  '市场数智运营',
+  'OPERATION',
+  '运营',
+  false,
+  '',
+  2,
+  'active',
+  '客户运营页面',
+  NOW(),
+  NOW()
+);
+
+-- 4. 工作台首页（属于我的工作台场景）
+INSERT INTO pages (
+  page_code,
+  page_name,
+  page_type,
+  page_path,
+  scenario_id,
+  scenario_code,
+  scenario_name,
+  module_code,
+  module_name,
+  is_tree_page,
+  tree_config_id,
+  sort_order,
+  status,
+  description,
+  created_at,
+  updated_at
+) VALUES (
+  'WORKSPACE_HOME',
+  '工作台首页',
+  'workspace',
+  '/workspace',
+  (SELECT id FROM business_scenarios WHERE scenario_code = 'WORKSPACE'),
+  'WORKSPACE',
+  '我的工作台',
+  'WORKSPACE',
+  '工作台',
+  false,
+  '',
+  1,
+  'active',
+  '工作台首页',
+  NOW(),
+  NOW()
+);

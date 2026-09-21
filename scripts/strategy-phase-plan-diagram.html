@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>策略中心阶段实现计划图</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2400px; background: #FFFFFF; color: #1F2937;
+    font-family: "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", sans-serif; padding: 30px 38px 32px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid #1F2937; padding-bottom: 12px; }
+  .title { font-size: 33px; font-weight: 700; letter-spacing: 1px; }
+  .title span { font-size: 16px; font-weight: 400; color: #6B7280; margin-left: 12px; letter-spacing: 0; }
+  .legend { display: flex; gap: 18px; align-items: center; font-size: 14px; color: #374151; }
+  .legend .lg { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 24px; height: 15px; border-radius: 3px; display: inline-block; }
+  .sw.done { background: #E8EAED; border: 1.4px solid #9AA0A6; }
+  .sw.opt { background: #FFF1DC; border: 1.6px solid #E8A33D; }
+  .sw.add { background: #E4F0FE; border: 1.6px solid #2F7DE1; }
+  .sw.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; }
+
+  .stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; align-items: stretch; }
+  .stage { border: 1.8px solid #1F3A5F; border-radius: 7px; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; }
+  .stage-hd { background: #1F3A5F; color: #FFFFFF; padding: 10px 13px; }
+  .stage-hd .ph { font-size: 20px; font-weight: 700; letter-spacing: .5px; }
+  .stage-hd .th { font-size: 13px; opacity: .92; margin-top: 4px; font-weight: 400; }
+  .goal { padding: 9px 13px; background: #F3F5F8; border-bottom: 1.4px solid #C7CDD6; font-size: 13px; color: #1F3A5F; line-height: 1.6; }
+  .goal b { color: #0F2A44; }
+  .body { padding: 10px; display: grid; gap: 7px; flex: 1; align-content: start; }
+  .chip { border-radius: 4px; padding: 8px 10px; border: 1.4px solid #9AA0A6; background: #E8EAED; color: #202124; }
+  .chip b { display: block; font-size: 14px; font-weight: 700; line-height: 1.4; }
+  .chip i { display: block; font-style: normal; font-size: 11.6px; color: #5F6B7A; margin-top: 3px; line-height: 1.5; }
+  .chip.opt { background: #FFF1DC; border-color: #E8A33D; color: #7A4B00; }
+  .chip.opt i { color: #96671C; }
+  .chip.add { background: #E4F0FE; border-color: #2F7DE1; color: #12457F; }
+  .chip.add i { color: #3C6FA8; }
+  .chip.tbd { background: #FFFFFF; border: 1.4px dashed #7A8699; color: #4A5568; }
+  .chip.tbd i { color: #7A8699; }
+  .done-box { margin: 0 10px 10px; border: 1.5px solid #2E7D52; background: #F2FAF5; border-radius: 5px; padding: 8px 10px; }
+  .done-box h5 { font-size: 12.5px; color: #2E7D52; margin-bottom: 4px; }
+  .done-box p { font-size: 12px; color: #3C4A42; line-height: 1.55; }
+  .dep { margin: 0 10px 10px; font-size: 11.8px; color: #6B7280; line-height: 1.55; border-top: 1.2px dashed #D5DAE1; padding-top: 7px; }
+  .arrow-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 4px; }
+  .arrow-row div { text-align: center; color: #2F7DE1; font-size: 16px; }
+  .legend-note { margin-top: 16px; border: 1.6px solid #1F3A5F; border-radius: 6px; padding: 11px 15px; background: #F7F9FC;
+    font-size: 13px; color: #374151; line-height: 1.75; }
+  .legend-note b { color: #1F3A5F; }
+  .note { margin-top: 12px; font-size: 12.6px; color: #6B7280; line-height: 1.7; border-top: 1.4px solid #E5E7EB; padding-top: 9px; }
+  .note b { color: #1F2937; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">新疆市场运营平台 · 策略中心阶段实现计划图<span>按能力依赖顺序划分四个阶段 · <b>不设具体时间</b>（时间由项目排期决定）</span></div>
+  <div class="legend">
+    <div class="lg"><span class="sw done"></span>已实现（阶段内基线）</div>
+    <div class="lg"><span class="sw opt"></span>已实现待增强</div>
+    <div class="lg"><span class="sw add"></span>未实现·本轮新建</div>
+    <div class="lg"><span class="sw tbd"></span>未实现·待接口立项</div>
+  </div>
+</div>
+
+<div class="stages">
+
+  <div class="stage">
+    <div class="stage-hd">
+      <div class="ph">阶段一 · 链路补齐</div>
+      <div class="th">把"有资产、没链路"补成端到端可跑</div>
+    </div>
+    <div class="goal"><b>目标：</b>一条诊断结论能从受理走到活动实例，全程有状态、可追踪。</div>
+    <div class="body">
+      <div class="chip opt"><b>策略中心总览改造</b><i>统计仪表盘 → 活动生命周期看板 + 我的待办 + 健康度 + 资产概览</i></div>
+      <div class="chip add"><b>定策链路：历史效果参照</b><i>定策时可见相似策略的历史达成率 / 健康度</i></div>
+      <div class="chip add"><b>定策链路：AI 定策 + 方案比选</b><i>产出 2-3 套候选方案（含置信度与推荐依据）并横向比选</i></div>
+      <div class="chip opt"><b>接收诊断受理动作补全</b><i>补拒收 / 转派 / 忽略，形成完整受理闭环</i></div>
+      <div class="chip add"><b>活动实例与全局活动 ID</b><i>统一字段 + 状态机（洞察中→…→已闭环），供调度与评估消费</i></div>
+      <div class="chip opt"><b>沉淀资产被引用</b><i>"应用此模板"一键带入定策第③步，并累计引用次数</i></div>
+      <div class="chip add"><b>AI 复盘</b><i>成效结论 / 关键归因 / 改进建议 / 模板候选</i></div>
+      <div class="chip"><b>策略要素随活动下发</b><i>产品 / 方案、话术、渠道三要素与活动实例绑定（现基线）</i></div>
+    </div>
+    <div class="done-box">
+      <h5>完成标志</h5>
+      <p>一条诊断结论可从受理走到活动实例，活动状态全程可追踪；主管可在看板看到全部在途活动。</p>
+    </div>
+    <div class="dep"><b>前置依赖：</b>无（本阶段为起点）</div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-hd">
+      <div class="ph">阶段二 · 资产复用与比选</div>
+      <div class="th">让沉淀资产真正参与定策，AI 稳定介入定策</div>
+    </div>
+    <div class="goal"><b>目标：</b>定策不再"凭经验手写"，而是"看历史效果 + 比多方案 + 复用要素"。</div>
+    <div class="body">
+      <div class="chip add"><b>活动配置统一页</b><i>IOP 普通营销 / 剧本营销 / 网格通三类活动一个页面统一配置</i></div>
+      <div class="chip opt"><b>策略审批独立页</b><i>从调度页内嵌抽出为独立审批环节，审批留痕</i></div>
+      <div class="chip opt"><b>AI 定策升级</b><i>候选方案 + 置信度 + 推荐依据，支持人工调优后确认</i></div>
+      <div class="chip opt"><b>最佳实践评审闭环</b><i>入选标准 + 候选 → 评审 → 发布 → 归档</i></div>
+      <div class="chip opt"><b>关联关系回写</b><i>AI 复盘回写关联强度与置信度（关联关系查询自动更新）</i></div>
+      <div class="chip opt"><b>产品 / 方案要素模板化</b><i>高频产品组合沉淀为要素模板，一键复用到新策略</i></div>
+      <div class="chip opt"><b>AI 话术生成</b><i>按客群 / 场景生成话术，人工确认后入话术库</i></div>
+      <div class="chip add"><b>话术 A/B 与版本对比</b><i>同一策略多条话术并行投放，按转化率择优沉淀</i></div>
+      <div class="chip opt"><b>置信度展示与口径说明</b><i>AI 结论统一展示置信度 + 计算口径 Tooltip</i></div>
+    </div>
+    <div class="done-box">
+      <h5>完成标志</h5>
+      <p>定策时可看到历史效果并完成多方案比选；模板、话术要素可复用且有引用与转化数据。</p>
+    </div>
+    <div class="dep"><b>前置依赖：</b>阶段一的定策链路与活动实例（无实例则无法计引用与转化）</div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-hd">
+      <div class="ph">阶段三 · 统筹与管控</div>
+      <div class="th">多策略并行不打架，口径与权限可控</div>
+    </div>
+    <div class="goal"><b>目标：</b>多条策略同时上线时，优先级、产能、频次、触点冲突由规则统一约束。</div>
+    <div class="body">
+      <div class="chip add"><b>策略统筹</b><i>策略优先级排序 + 产能预估，决定"先做哪条、做多少"</i></div>
+      <div class="chip add"><b>策略控制</b><i>防打扰 / 名单 / 时段 / 互斥 / 抢占，约束所有出站策略</i></div>
+      <div class="chip add"><b>策略-客群匹配规则</b><i>哪条策略给哪个客群显性化，作为派发依据</i></div>
+      <div class="chip add"><b>空间策略输入</b><i>区域 / 网格维度的策略输入，支撑属地攻坚</i></div>
+      <div class="chip add"><b>要素与产品库口径联动</b><i>产品编码 / 优惠口径与产品运营统一，避免二次维护</i></div>
+      <div class="chip opt"><b>渠道优先级与频次统一约束</b><i>渠道优先级由策略控制统一约束，不与调度侧重复配置</i></div>
+      <div class="chip add"><b>触点协同规则</b><i>多触点互斥 / 接力 / 优先规则，交调度中心按规则选触点</i></div>
+      <div class="chip opt"><b>权限与操作审计</b><i>页面级权限 + 审批 / 复核岗位区分，操作留痕</i></div>
+      <div class="chip add"><b>自下而上诉求承接</b><i>地市 / 一线提报按约定流程进入策略需求池</i></div>
+    </div>
+    <div class="done-box">
+      <h5>完成标志</h5>
+      <p>多条策略并行时冲突可被规则自动约束；产品 / 话术 / 渠道要素全平台口径唯一；审批与操作可审计。</p>
+    </div>
+    <div class="dep"><b>前置依赖：</b>阶段二的活动实例与要素模板（控制与统筹需以实例为单位生效）</div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-hd">
+      <div class="ph">阶段四 · 跨中心接口立项</div>
+      <div class="th">用接口替代人工搬运，闭环自动化</div>
+    </div>
+    <div class="goal"><b>目标：</b>策略与洞察 / 调度 / 评估三中心之间的数据流转由接口自动完成。</div>
+    <div class="body">
+      <div class="chip tbd"><b>接收诊断接口</b><i>洞察中心 → 策略中心：诊断结论自动推送，无需人工导入</i></div>
+      <div class="chip tbd"><b>调度接收接口</b><i>策略中心 → 调度中心：活动实例自动进入调度待办</i></div>
+      <div class="chip tbd"><b>执行结果接口</b><i>调度中心 → 评估中心：执行结果自动回传</i></div>
+      <div class="chip tbd"><b>评估回流接口</b><i>评估中心 → 策略中心：效果数据自动回流至效果库</i></div>
+      <div class="chip opt"><b>效果回流接收升级</b><i>由"人工一键回流"升级为接口自动入库，并驱动根因 / 策略置信度更新</i></div>
+    </div>
+    <div class="done-box">
+      <h5>完成标志</h5>
+      <p>四个接口联调通过：诊断可自动进策略、活动可自动进调度、结果自动进评估、效果自动回策略沉淀。</p>
+    </div>
+    <div class="dep"><b>前置依赖：</b>阶段一～三的页面侧流程已跑通（接口只是把人工动作自动化）；接口立项与联调依赖上游系统配合</div>
+  </div>
+
+</div>
+
+<div class="legend-note">
+  <b>阶段划分与图例说明</b>：<b>阶段顺序＝能力依赖顺序</b>，不设时间轴（不给出起止时间与工期）。<b>灰底</b>＝本阶段沿用的已实现基线；<b>橙底</b>＝已实现但需增强；<b>蓝底</b>＝未实现、本轮新建；<b>白底虚框</b>＝未实现、需跨系统接口立项。<b>完成标志</b>＝该阶段验收锚点，同时是下一阶段的前置依赖；未通过验收即进入下一阶段会形成返工。四个阶段与《策略中心优化方案 V1.0》第七、八章的分期、验收口径一致；逐项能力清单（含现状依据）见《策略中心功能架构方案 V1.0》第六章。
+</div>
+
+<div class="note">
+  <b>为什么接口放在最后</b>：接口的作用是把已经跑通的人工动作自动化。若页面侧流程未固化（阶段一～三），接口落地后仍需反复改字段与状态定义，返工成本高于先跑通人工闭环。因此四个跨中心接口统一放到阶段四立项对接，与本平台"页面侧先就绪、接口后立项"的既有做法一致。
+</div>
+</body>
+</html>

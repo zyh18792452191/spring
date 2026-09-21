@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>策略中心现状（As-Is）关系架构图</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2400px; background: #FFFFFF; color: #1F2937;
+    font-family: "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", sans-serif; padding: 30px 38px 34px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid #1F2937; padding-bottom: 12px; }
+  .title { font-size: 33px; font-weight: 700; letter-spacing: 1px; }
+  .title span { display: block; font-size: 15px; font-weight: 400; color: #6B7280; margin-top: 8px; letter-spacing: 0; }
+  .legend { display: flex; flex-direction: column; gap: 7px; font-size: 14px; color: #374151; }
+  .legend .lg { display: flex; align-items: center; gap: 8px; }
+  .ln { width: 40px; height: 0; border-top-width: 3px; border-top-style: solid; display: inline-block; }
+  .ln.direct { border-top-color: #2E7D52; }
+  .ln.indirect { border-top-color: #E8A33D; border-top-style: dashed; }
+  .ln.none { border-top-color: #8892A0; border-top-style: dotted; }
+  .ln.gap { border-top: 3px solid #C0392B; border-top-style: dashed; }
+
+  .sec { margin-top: 20px; }
+  .sec-hd { display: flex; align-items: baseline; gap: 12px; border-left: 9px solid #1F3A5F; padding-left: 12px; margin-bottom: 12px; }
+  .sec-hd h3 { font-size: 20px; color: #1F3A5F; letter-spacing: .5px; }
+  .sec-hd em { font-style: normal; font-size: 13px; color: #6B7280; }
+
+  /* ===== 三侧事实 ===== */
+  .tri { display: grid; grid-template-columns: 1fr 1.18fr 1fr; gap: 14px; }
+  .side { border: 1.6px solid #C7CDD6; border-radius: 6px; overflow: hidden; }
+  .side-hd { padding: 9px 13px; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
+  .side-hd em { font-style: normal; font-size: 12px; font-weight: 400; opacity: .9; }
+  .s1 .side-hd { background: #5B6B7F; }
+  .s2 .side-hd { background: #1F3A5F; }
+  .s3 .side-hd { background: #2A6E5A; }
+  .side-bd { padding: 11px; display: grid; gap: 9px; background: #FBFCFD; }
+  .blk { border: 1.4px solid #D8DEE6; border-radius: 5px; background: #FFFFFF; padding: 9px 11px; }
+  .blk h5 { font-size: 14px; color: #1F3A5F; margin-bottom: 5px; }
+  .blk h5 code { font-family: inherit; font-size: 11px; font-weight: 400; color: #7A8699; margin-left: 6px; }
+  .blk p { font-size: 12.5px; color: #4A5568; line-height: 1.75; }
+  .blk p b { color: #1F2937; }
+  .blk .tagline { margin-top: 6px; font-size: 12px; color: #7A8699; line-height: 1.7; }
+  .blk.mark-no { border-color: #C6CBD3; background: #F4F5F7; }
+  .blk.mark-no h5 { color: #5F6B7A; }
+  .blk.mark-gap { border: 1.4px dashed #C0392B; background: #FDF0EE; }
+  .blk.mark-gap h5 { color: #9B2C1F; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 3px; margin-left: 7px; vertical-align: 1px; }
+  .badge.no { background: #E5E7EB; color: #4B5563; }
+  .badge.part { background: #FFF1DC; color: #96671C; }
+  .badge.gap { background: #FBDDD8; color: #9B2C1F; }
+
+  /* ===== 关系判定 ===== */
+  .rows { display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 232px 268px 232px 1fr; align-items: center; gap: 12px;
+    border: 1.4px solid #D8DEE6; border-left-width: 7px; border-radius: 5px; padding: 9px 14px; background: #FFFFFF; }
+  .row.direct { border-left-color: #2E7D52; background: #F6FBF8; }
+  .row.indirect { border-left-color: #E8A33D; background: #FFFBF3; }
+  .row.none { border-left-color: #8892A0; background: #F7F8FA; }
+  .ent { font-size: 13.5px; font-weight: 700; color: #1F2937; line-height: 1.45; }
+  .ent small { display: block; font-weight: 400; font-size: 11px; color: #7A8699; margin-top: 2px; }
+  .rel { font-size: 12.5px; font-weight: 700; }
+  .rel .line { height: 0; border-top-width: 3px; border-top-style: solid; margin-bottom: 4px; }
+  .row.direct .rel { color: #2E7D52; } .row.direct .rel .line { border-top-color: #2E7D52; }
+  .row.indirect .rel { color: #B5761B; } .row.indirect .rel .line { border-top-color: #E8A33D; border-top-style: dashed; }
+  .row.none .rel { color: #6B7480; } .row.none .rel .line { border-top-color: #8892A0; border-top-style: dotted; }
+  .evidence { font-size: 12px; color: #4A5568; line-height: 1.7; }
+  .evidence b { color: #1F3A5F; font-weight: 700; }
+  .evidence i { font-style: normal; color: #7A8699; }
+
+  /* ===== 断点 ===== */
+  .gaps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .gap { border: 1.4px dashed #C0392B; background: #FDF0EE; border-radius: 6px; padding: 12px 15px; }
+  .gap h5 { font-size: 15px; color: #9B2C1F; margin-bottom: 6px; }
+  .gap p { font-size: 12.5px; color: #4A5568; line-height: 1.75; }
+  .gap p b { color: #9B2C1F; }
+
+  /* ===== 小结 ===== */
+  .summary { border: 1.6px solid #1F3A5F; background: #F7F9FC; border-radius: 6px; padding: 13px 18px; display: flex; gap: 28px; align-items: center; }
+  .summary .item { font-size: 13.5px; color: #374151; white-space: nowrap; }
+  .summary .item b { font-size: 22px; margin-right: 6px; }
+  .summary .concl { font-size: 13px; color: #5F6B7A; line-height: 1.75; border-left: 1.4px solid #D8DEE6; padding-left: 22px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">新疆市场运营平台 · 策略中心现状（As-Is）关系架构图
+    <span>核实范围：工作台 · 策略管理（根因库管理 / 策略库管理 / 关联关系查询）× 市场运营 · 三类调度（指标 / 策略 / 客群）× 能力中心 · 三中心（洞察 / 调度 / 评估）　｜　判定方式：运营平台原型代码级调用与引用核实</span>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="ln direct"></span>直接关联：页面可点通 / 数据被真实引用</div>
+    <div class="lg"><span class="ln indirect"></span>间接关联：仅概念或数据字段层，缺入口 / 未打通</div>
+    <div class="lg"><span class="ln none"></span>无关联：两者之间无调用、无引用（已注明原因）</div>
+    <div class="lg"><span class="ln gap"></span>应有关联但现状缺失（优化点）</div>
+  </div>
+</div>
+
+<!-- ============ 一、三侧现状事实 ============ -->
+<div class="sec">
+  <div class="sec-hd"><h3>一、三侧现状事实（菜单与真实入口）</h3><em>左侧为调度发起侧，中间为资产与治理侧（本图分析主体），右侧为能力中心侧</em></div>
+  <div class="tri">
+    <div class="side s1">
+      <div class="side-hd"><span>市场运营 · 运营场景</span><em>调度发起侧</em></div>
+      <div class="side-bd">
+        <div class="blk">
+          <h5>存量运营</h5>
+          <p>流量运营 / 中高端运营 / 离网维系 / 家庭运营</p>
+        </div>
+        <div class="blk">
+          <h5>细分市场运营</h5>
+          <p>国际运营 / 校园运营</p>
+        </div>
+        <div class="blk">
+          <h5>运营页面内的三类调度入口</h5>
+          <p><b>指标调度</b>：指标分析面板「指标调度」→ 弹窗配置（不含策略字段）</p>
+          <p><b>策略调度</b>：指标分析面板「策略调度」→ 跳转策略匹配推荐页</p>
+          <p><b>客群调度</b>：客群分析面板「客群调度」→ 弹窗配置（触客策略为自由文本）</p>
+          <div class="tagline">说明：三类调度并非独立菜单，均挂载在运营页面的分析面板上，属“运营场景内动作”。</div>
+        </div>
+      </div>
+    </div>
+    <div class="side s2">
+      <div class="side-hd"><span>工作台 · 策略管理</span><em>资产与治理侧（分析主体）</em></div>
+      <div class="side-bd">
+        <div class="blk">
+          <h5>根因库管理<code>/workspace/strategy/root-cause</code></h5>
+          <p>根因字典维护；来源＝专家经验 / AI 生成；配置<b>关联指标</b>（含方向、运算符、阈值）、<b>关联客群</b>；置信度＝匹配率×0.60＋引用率×0.25＋来源权重×0.15</p>
+        </div>
+        <div class="blk">
+          <h5>策略库管理<code>/workspace/strategy/library</code></h5>
+          <p>7 层结构：基础信息 / 关联配置（关联根因·指标·客群）/ 产品方案 / 渠道适配 / 营销话术 / <b>运行数据</b>（STR、COD 调度单）/ 使用记录；支持导入、上下架、版本</p>
+        </div>
+        <div class="blk">
+          <h5>关联关系查询<code>/workspace/strategy/relation</code></h5>
+          <p>5 类关系<b>只读</b>汇总：指标↔根因、客群↔根因、指标↔策略、客群↔策略、根因↔策略（阈值强度 + 来源标注）</p>
+        </div>
+        <div class="blk" style="background:#F7F9FC">
+          <h5>同菜单下其他已实现项</h5>
+          <p>接收诊断 · 策略沉淀（效果库/最佳实践/策略版本/模板管理）· 跨中心协作（洞察/调度/评估/知识 4 页）· 网格通活动配置</p>
+        </div>
+      </div>
+    </div>
+    <div class="side s3">
+      <div class="side-hd"><span>能力中心 · 三中心（+ 调度落点）</span><em>能力侧</em></div>
+      <div class="side-bd">
+        <div class="blk mark-no">
+          <h5>洞察中心<span class="badge no">无直接关联</span></h5>
+          <p>洞察总览 / 指标树模板 / 智能分析报告 / AI 洞察助手；菜单内无根因、策略引用</p>
+        </div>
+        <div class="blk mark-no">
+          <h5>调度中心<span class="badge no">无直接关联</span></h5>
+          <p>调度总览 / 运营人员管理；页面无策略、根因维度字段</p>
+        </div>
+        <div class="blk">
+          <h5>评估中心<span class="badge part">数据层关联</span></h5>
+          <p>评估总览 / 工单分析 / 策略分析；策略分析子单含<b>策略 ID、策略来源（AI 推荐/人工创建）、客群 ID、指标 ID</b>，但页面无跳转策略库入口</p>
+        </div>
+        <div class="blk">
+          <h5>工作台 · 调度管理<span class="badge part">实际落点</span></h5>
+          <p>工单提交 / 工单处理 / 工单查询 / 工单配置管理；三类调度产出的工单在此处理，而非“能力中心·调度中心”</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 二、关系判定 ============ -->
+<div class="sec">
+  <div class="sec-hd"><h3>二、关系判定明细（13 条）</h3><em>每条均给出代码级依据；无关联项已明确标注原因</em></div>
+  <div class="rows" id="relationRows"></div>
+</div>
+
+<!-- ============ 三、现状断点 ============ -->
+<div class="sec">
+  <div class="sec-hd"><h3>三、现状断点（优化驱动）</h3><em>由“间接关联 / 无关联”项推导出的 4 处待补齐环节</em></div>
+  <div class="gaps" id="gapCards"></div>
+</div>
+
+<!-- ============ 四、小结 ============ -->
+<div class="sec">
+  <div class="summary" id="summaryBox"></div>
+</div>
+<script>
+const rows = [
+  {
+    t: 'direct',
+    left: ['根因库管理', '工作台 · 策略管理'],
+    rel: '只读引用 →',
+    right: ['关联关系查询', '关系视图'],
+    ev: '<b>依据</b>：关联关系查询的关系数据来源标注为「来源于根因库的关联指标 / 关联客群配置（只读）」；根因库配置的关联指标（方向 / 运算符 / 阈值）与关联客群直接构成其中 2 类关系。',
+  },
+  {
+    t: 'direct',
+    left: ['策略库管理', '工作台 · 策略管理'],
+    rel: '只读引用 →',
+    right: ['关联关系查询', '关系视图'],
+    ev: '<b>依据</b>：指标↔策略、客群↔策略、根因↔策略 3 类关系来源标注为「来源于策略库的关联配置（只读）」，即策略库「关联配置」层为唯一数据源。',
+  },
+  {
+    t: 'direct',
+    left: ['策略库管理', '工作台 · 策略管理'],
+    rel: '策略来源 →',
+    right: ['策略调度', '市场运营 · 运营场景'],
+    ev: '<b>依据</b>：运营页指标分析面板「策略调度」跳转策略匹配推荐页，策略取自策略库；策略库详情含「运行数据」（STR / COD 调度单）与「使用记录」，下架弹窗明确「下架后不再参与系统推荐，已产生调度单不受影响」。',
+  },
+  {
+    t: 'indirect',
+    left: ['根因库管理', '工作台 · 策略管理'],
+    rel: '概念同源 · 数据未打通 →',
+    right: ['策略调度', '市场运营 · 运营场景'],
+    ev: '<b>依据</b>：匹配推荐页以「根因指标」卡片组织「客群-策略对」，符合根因库的业务口径；但其可选根因指标为页面内固定列表（本地常量），未读取根因库的关联指标与置信度 —— 现状为双轨维护。',
+  },
+  {
+    t: 'indirect',
+    left: ['策略库管理', '工作台 · 策略管理'],
+    rel: '数据层可关联 · 缺页面入口 →',
+    right: ['评估中心 · 策略分析', '能力中心'],
+    ev: '<b>依据</b>：策略分析的原子数据单元（子单）携带策略 ID、策略来源（AI 推荐 / 人工创建）及客群、指标、场景标识，具备回溯策略库的数据基础；但评估页无「查看策略详情」入口，策略库侧也无「查看评估结果」入口。',
+  },
+  {
+    t: 'indirect',
+    left: ['洞察中心', '能力中心'],
+    rel: '模拟数据承接 →',
+    right: ['接收诊断 / 策略中心', '工作台 · 策略管理'],
+    ev: '<b>依据</b>：接收诊断页顶部标注「数据来源：指标树诊断 / AI 指标诊断结论推送」，字段含接收渠道（指标树诊断结论 / AI 指标诊断）；但数据为页面内固定样例，无真实推送通道与状态回传。',
+  },
+  {
+    t: 'indirect',
+    left: ['跨中心协作 4 页', '与洞察 / 调度 / 评估 / 知识协作'],
+    rel: '演示页 · 无真实接口 →',
+    right: ['洞察中心 / 调度中心 / 评估中心 / 知识中心', '能力中心'],
+    ev: '<b>依据</b>：4 个协作页均使用本地模拟数据（引用 / 调度单 / 评估摘要 / 知识引用列表）与操作提示文案，未调用外部系统接口，属接口立项前的占位实现。',
+  },
+  {
+    t: 'none',
+    left: ['根因库管理', '工作台 · 策略管理'],
+    rel: '✕ 无关联 →',
+    right: ['指标调度', '市场运营 · 运营场景'],
+    ev: '<b>无关联原因</b>：根因库为诊断知识资产，不参与工单生成；指标调度弹窗字段为指标 / 目标值 / 区域 / 时间与工单描述，无根因字段；代码中两者无 import 与调用关系。',
+  },
+  {
+    t: 'none',
+    left: ['根因库管理', '工作台 · 策略管理'],
+    rel: '✕ 无关联 →',
+    right: ['客群调度', '市场运营 · 运营场景'],
+    ev: '<b>无关联原因</b>：客群调度的圈选来自客群标签，配置项为触客策略（自由文本）、重要级别、后评估周期，不读取根因库。',
+  },
+  {
+    t: 'none',
+    left: ['策略库管理', '工作台 · 策略管理'],
+    rel: '✕ 无关联 →',
+    right: ['指标调度 / 客群调度', '市场运营 · 运营场景'],
+    ev: '<b>无关联原因</b>：客群调度的「触客策略」为自由文本输入框（上限 500 字），指标调度无策略字段；两者均不引用策略库的产品、话术、渠道与约束，调度完成后也不回写策略库的使用记录。',
+  },
+  {
+    t: 'none',
+    left: ['关联关系查询', '工作台 · 策略管理'],
+    rel: '✕ 无关联 →',
+    right: ['三类调度 / 三中心', '运营场景 · 能力中心'],
+    ev: '<b>无关联原因</b>：该页仅提供 5 类关系的只读查询与检索，不发起调度、不参与调度前校验，也不对洞察 / 调度 / 评估中心提供接口。',
+  },
+  {
+    t: 'none',
+    left: ['调度中心', '能力中心'],
+    rel: '✕ 无关联 →',
+    right: ['策略管理三菜单', '工作台 · 策略管理'],
+    ev: '<b>无关联原因</b>：能力中心·调度中心现为「调度总览 + 运营人员管理」，页面无策略、根因维度；三类调度产生的工单实际落在 工作台 · 调度管理（工单提交 / 处理 / 查询 / 配置）。',
+  },
+  {
+    t: 'none',
+    left: ['洞察中心菜单', '能力中心'],
+    rel: '✕ 无关联 →',
+    right: ['根因库 / 策略库', '工作台 · 策略管理'],
+    ev: '<b>无关联原因</b>：洞察中心菜单（洞察总览 / 指标树模板 / 智能分析报告 / AI 洞察助手）下无根因、策略引用；仅运营页文案中出现「支持根因定位」的表述，不构成数据关联。',
+  },
+];
+
+const gaps = [
+  {
+    h: '断点 1｜策略库缺「发起调度」入口',
+    p: '策略调度入口仅存在于市场运营页面的分析面板；策略库列表与详情页无「发起策略调度 / 跳转匹配推荐」入口，也无法从策略侧查看已产生的调度单之外的可达路径 —— <b>应补：策略库 → 策略调度（策略来源回填 + 调度结果回写运行数据）</b>。',
+  },
+  {
+    h: '断点 2｜「根因指标」双轨维护',
+    p: '根因库可配置关联指标（含方向、阈值、置信度），而匹配推荐的根因指标是页面内固定列表，两处口径同源但数据未打通 —— <b>应补：匹配推荐以根因库为唯一数据源，并展示根因来源与置信度</b>。',
+  },
+  {
+    h: '断点 3｜客群调度「触客策略」为自由文本',
+    p: '客群调度的触客策略需人工手写，已建立的策略资产（产品、话术、渠道、适用约束）无法被复用，也无法统计策略使用情况 —— <b>应补：从策略库选择策略并带入配置，回写使用记录</b>。',
+  },
+  {
+    h: '断点 4｜4 个跨中心接口均为演示实现',
+    p: '接收诊断、调度接收、执行结果、评估回流与 4 个协作页均为模拟数据，跨中心闭环（洞察 → 策略 → 调度 → 评估 → 沉淀）尚未真实贯通 —— <b>应补：按接口契约立项对接（见《策略中心功能架构方案 V1.0》第四章）</b>。',
+  },
+];
+
+const wrap = (el) => el;
+document.getElementById('relationRows').innerHTML = rows
+  .map(
+    (r, i) => `
+  <div class="row ${r.t}">
+    <div class="ent">${r.left[0]}<small>${r.left[1]}</small></div>
+    <div class="rel"><div class="line"></div>${i + 1}. ${r.rel}</div>
+    <div class="ent">${r.right[0]}<small>${r.right[1]}</small></div>
+    <div class="evidence">${r.ev}</div>
+  </div>`
+  )
+  .join('');
+
+document.getElementById('gapCards').innerHTML = gaps
+  .map((g) => `<div class="gap"><h5>${g.h}</h5><p>${g.p}</p></div>`)
+  .join('');
+
+document.getElementById('summaryBox').innerHTML = `
+  <div class="item"><b>3</b>条直接关联</div>
+  <div class="item"><b>4</b>条间接关联</div>
+  <div class="item"><b>6</b>条无关联</div>
+  <div class="item"><b>4</b>处断点</div>
+  <div class="concl">现状特征：「资产齐、链路断」—— 根因库 / 策略库 / 关联关系查询三者已构成资产闭环（只读引用打通），但与三类调度之间仅「策略库 → 策略调度」一条链路可用，其余以自由文本或模拟数据衔接；与能力中心三中心尚无真实接口。</div>
+`;
+</script>
+</body>
+</html>
