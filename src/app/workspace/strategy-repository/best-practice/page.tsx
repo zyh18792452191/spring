@@ -1,7 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, ChevronRight, Search, Star } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Rocket, Search, Star, TrendingDown, TrendingUp } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,16 @@ interface CategoryNode {
   children?: CategoryNode[];
 }
 
+/** 按采纳次数推导实践生命周期：候选→评审中→已发布→已归档 */
+function lifecycleOf(item: BestPractice): { label: string; className: string } {
+  if (item.adoptionCount >= 30) return { label: '已发布', className: 'bg-emerald-100 text-emerald-700' };
+  if (item.adoptionCount >= 15) return { label: '评审中', className: 'bg-amber-100 text-amber-700' };
+  if (item.adoptionCount >= 5) return { label: '候选', className: 'bg-blue-100 text-blue-700' };
+  return { label: '已归档', className: 'bg-muted text-muted-foreground' };
+}
+
 export default function BestPracticePage() {
+  const router = useRouter();
   const [expanded, setExpanded] = useState<string[]>(['业务场景', '策略类型']);
   const [activeScenario, setActiveScenario] = useState('all');
   const [keyword, setKeyword] = useState('');
@@ -77,6 +87,38 @@ export default function BestPracticePage() {
         </div>
       </div>
 
+      {/* 入选标准 + 名次盯控 */}
+      <div className="grid grid-cols-[1fr_260px] gap-3">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground">入选标准：</span>
+          策略效果库中「达成率 ≥ 80% 且 改善幅度 ≥ 3%」的策略经 AI 复盘提炼为最佳实践，进入
+          <span className="mx-1 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700">候选</span>→
+          <span className="mx-1 rounded bg-amber-100 px-1.5 py-0.5 text-amber-700">评审中</span>→
+          <span className="mx-1 rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700">已发布</span>
+          生命周期，低采纳且长期未更新的实践自动归档。
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="text-xs font-medium text-foreground mb-2">名次盯控</div>
+          {(() => {
+            const sorted = [...BEST_PRACTICES].sort((a, b) => b.adoptionCount - a.adoptionCount);
+            const top = sorted[0];
+            const bottom = sorted[sorted.length - 1];
+            return (
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-emerald-600"><TrendingUp className="w-3.5 h-3.5" />TOP1</span>
+                  <span className="text-foreground">{top.title}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-red-500"><TrendingDown className="w-3.5 h-3.5" />末尾</span>
+                  <span className="text-foreground">{bottom.title}</span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
       <div className="grid grid-cols-[240px_1fr] gap-4">
         {/* 左侧分类树 */}
         <div className="rounded-lg border border-border bg-card p-3">
@@ -132,9 +174,15 @@ export default function BestPracticePage() {
             <div key={item.id} className="flex flex-col rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-sm font-medium text-foreground">{item.title}</h3>
-                <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary">
-                  {item.category}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    {item.category}
+                  </Badge>
+                  {(() => {
+                    const lc = lifecycleOf(item);
+                    return <Badge variant="outline" className={`border-0 ${lc.className}`}>{lc.label}</Badge>;
+                  })()}
+                </div>
               </div>
               <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{item.summary}</p>
               <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
@@ -149,9 +197,20 @@ export default function BestPracticePage() {
                 <span className="text-xs text-muted-foreground">
                   {item.author} · {item.publishedAt}
                 </span>
-                <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
-                  查看详情
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
+                    查看详情
+                  </Button>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto gap-1 p-0 text-primary"
+                    onClick={() => router.push(`/workspace/strategy/matching?template=${encodeURIComponent(item.id)}&from=best-practice`)}
+                  >
+                    <Rocket className="w-3.5 h-3.5" />
+                    一键复用
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

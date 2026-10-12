@@ -16,6 +16,12 @@ import {
   CheckCircle,
   Download,
   CalendarRange,
+  Activity,
+  BellRing,
+  Archive,
+  Sparkles,
+  BookOpen,
+  Layers,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -37,6 +43,20 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
+import { ACTIVITY_INSTANCES, ActivityStatus } from '@/lib/strategy-activity';
+
+// ===== 活动生命周期看板配置 =====
+const LIFECYCLE_STATUSES: { key: ActivityStatus; color: string }[] = [
+  { key: '洞察中', color: '#1677FF' },
+  { key: '制定中', color: '#722ED1' },
+  { key: '调度中', color: '#13C2C2' },
+  { key: '执行中', color: '#FA8C16' },
+  { key: '评估中', color: '#EB2F96' },
+  { key: '沉淀中', color: '#52C41A' },
+  { key: '已闭环', color: '#8C8C8C' },
+];
 
 // ===== 日期区间工具 =====
 const ANCHOR_END = '2026-06-15';
@@ -127,6 +147,7 @@ export default function StrategyOverviewPage() {
   const [dateFrom, setDateFrom] = useState('2026-06-08');
   const [dateTo, setDateTo] = useState(ANCHOR_END);
   const mounted = useMounted();
+  const router = useRouter();
 
   const { stats, charts, dayCount } = useMemo(() => {
     const series = buildSeries(dateFrom, dateTo);
@@ -302,6 +323,77 @@ export default function StrategyOverviewPage() {
         })}
       </div>
 
+      {/* 活动生命周期看板 */}
+      <div className="grid grid-cols-7 gap-3 mb-4">
+        {LIFECYCLE_STATUSES.map((s) => {
+          const count = ACTIVITY_INSTANCES.filter((a) => a.status === s.key).length;
+          return (
+            <Card key={s.key} className="bg-white border-0 shadow-sm">
+              <CardContent className="p-3 text-center">
+                <div className="text-2xl font-semibold" style={{ color: s.color }}>{count}</div>
+                <div className="text-xs text-muted-foreground mt-1">{s.key}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* 在途活动 + 我的待办 */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <Card className="bg-white border-0 shadow-sm col-span-2">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-medium text-foreground">在途活动</div>
+              <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => router.push('/workspace/strategy/activity-track')}>
+                查看全部
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {ACTIVITY_INSTANCES.filter((a) => a.status !== '已闭环').slice(0, 5).map((a) => (
+                <div key={a.id} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-sm text-foreground truncate">{a.name}</div>
+                    <div className="text-xs text-muted-foreground">{a.id}</div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge className="bg-white">{a.status}</Badge>
+                    <Button variant="ghost" size="sm" className="h-7 text-primary" onClick={() => router.push(`/workspace/strategy/activity-track?activity=${a.id}`)}>
+                      追踪
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-sm font-medium text-foreground mb-3 flex items-center gap-1">
+              <BellRing size={14} className="text-primary" /> 我的待办
+            </div>
+            <div className="space-y-2">
+              {[
+                { label: '待受理诊断', count: 3, path: '/workspace/strategy/receive-diagnosis', icon: ClipboardList },
+                { label: '待审批活动', count: ACTIVITY_INSTANCES.filter((a) => a.status === '制定中').length, path: '/workspace/strategy/approval', icon: CheckCircle },
+                { label: '待复盘活动', count: ACTIVITY_INSTANCES.filter((a) => a.status === '评估中').length, path: '/workspace/strategy-repository/effect', icon: Sparkles },
+              ].map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button key={t.label} type="button" onClick={() => router.push(t.path)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-muted/60 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Icon size={15} className="text-muted-foreground" />
+                      <span className="text-sm text-foreground">{t.label}</span>
+                    </div>
+                    <span className="text-lg font-semibold text-primary">{t.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* 趋势图表 - 3行×2列 */}
       <div className="grid grid-cols-2 gap-3">
         {charts.map((chart) => (
@@ -373,6 +465,55 @@ export default function StrategyOverviewPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* 策略健康度 + 沉淀资产概览 */}
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <Card className="bg-white border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-sm font-medium text-foreground mb-3 flex items-center gap-1">
+              <Activity size={14} className="text-primary" /> 策略健康度分布
+            </div>
+            <div className="flex items-end justify-around">
+              {[
+                { label: '优秀', count: 38, color: '#52C41A' },
+                { label: '良好', count: 45, color: '#1677FF' },
+                { label: '预警', count: 12, color: '#FA8C16' },
+                { label: '失效', count: 3, color: '#BFBFBF' },
+              ].map((h) => (
+                <div key={h.label} className="flex flex-col items-center gap-1">
+                  <div className="text-2xl font-semibold" style={{ color: h.color }}>{h.count}</div>
+                  <div className="text-xs text-muted-foreground">{h.label}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-sm font-medium text-foreground mb-3 flex items-center gap-1">
+              <Archive size={14} className="text-primary" /> 沉淀资产概览
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: '策略库', count: 96, icon: Layers },
+                { label: '模板', count: 23, icon: FileText },
+                { label: '最佳实践', count: 18, icon: BookOpen },
+                { label: '案例库', count: 45, icon: Sparkles },
+              ].map((s) => {
+                const Icon = s.icon;
+                return (
+                  <div key={s.label} className="flex flex-col items-center gap-1 rounded-lg bg-muted/40 py-3">
+                    <Icon size={16} className="text-primary" />
+                    <div className="text-xl font-semibold text-foreground">{s.count}</div>
+                    <div className="text-xs text-muted-foreground">{s.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

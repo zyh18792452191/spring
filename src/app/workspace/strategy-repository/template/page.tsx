@@ -1,7 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, FileText, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, FileText, Rocket, Search } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { STRATEGY_TEMPLATES, type StrategyTemplate } from '../data';
 const PAGE_SIZE = 15;
 
 export default function StrategyTemplatePage() {
+  const router = useRouter();
   const [keyword, setKeyword] = useState('');
   const [scenario, setScenario] = useState('all');
   const [category, setCategory] = useState('all');
@@ -156,6 +158,15 @@ export default function StrategyTemplatePage() {
                     >
                       <Copy className="w-3.5 h-3.5" />
                       {copiedIds.includes(item.id) ? '已复制' : '复制模板'}
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto gap-1 p-0 text-primary"
+                      onClick={() => router.push(`/workspace/strategy/matching?template=${encodeURIComponent(item.id)}&from=template`)}
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      应用此模板
                     </Button>
                   </div>
                 </TableCell>

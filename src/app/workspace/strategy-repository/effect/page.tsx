@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowLeft, ChevronLeft, ChevronRight, Download, Search, TrendingDown, TrendingUp } from 'lucide-react';
+import { Activity, ArrowLeft, ChevronLeft, ChevronRight, Download, GitCompare, Search, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
   type HealthLevel,
   type EffectSummary,
 } from '../data';
+import AiReviewDialog from './ai-review-dialog';
 
 const PAGE_SIZE = 15;
 
@@ -61,6 +62,8 @@ export default function StrategyEffectPage() {
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<EffectRecord | null>(null);
+  const [review, setReview] = useState<EffectRecord | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return EFFECT_RECORDS.filter((item) => {
@@ -121,6 +124,10 @@ export default function StrategyEffectPage() {
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
             <Download className="w-4 h-4" />
             导出
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCompareOpen(true)}>
+            <GitCompare className="w-4 h-4" />
+            策略横向对比
           </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => router.push('/workspace/strategy-repository/best-practice')}>
             <Activity className="w-4 h-4" />
@@ -280,9 +287,15 @@ export default function StrategyEffectPage() {
                 </TableCell>
                 <TableCell className="text-xs font-mono text-primary">{item.workOrderId}</TableCell>
                 <TableCell>
-                  <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
-                    详情
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
+                      详情
+                    </Button>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setReview(item)}>
+                      <Sparkles className="w-3.5 h-3.5 mr-0.5" />
+                      AI复盘
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -327,6 +340,8 @@ export default function StrategyEffectPage() {
       </div>
 
       <EffectDetailDialog record={detail} onClose={() => setDetail(null)} />
+      <AiReviewDialog record={review} onClose={() => setReview(null)} />
+      <CompareDialog open={compareOpen} onClose={() => setCompareOpen(false)} records={filtered.slice(0, 5)} />
     </div>
   );
 }
@@ -401,6 +416,38 @@ function EffectDetailDialog({ record, onClose }: { record: EffectRecord | null; 
             </div>
           </div>
 
+          <div className="rounded-lg border border-border">
+            <div className="border-b border-border bg-muted px-3 py-2 text-xs font-medium text-foreground">
+              干预 / 未干预客群长期效果对比
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-2 font-medium">对比维度</th>
+                  <th className="px-3 py-2 font-medium">干预客群</th>
+                  <th className="px-3 py-2 font-medium">未干预客群</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="px-3 py-2 text-muted-foreground">办理率</td>
+                  <td className="px-3 py-2 font-medium text-primary">{record.dealRate}%</td>
+                  <td className="px-3 py-2 text-muted-foreground">{Math.max(1, Math.round(record.dealRate * 0.32))}%</td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="px-3 py-2 text-muted-foreground">留存率</td>
+                  <td className="px-3 py-2 font-medium text-primary">86.4%</td>
+                  <td className="px-3 py-2 text-muted-foreground">71.2%</td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-2 text-muted-foreground">ARPU 变化</td>
+                  <td className="px-3 py-2 font-medium text-primary">+8.6%</td>
+                  <td className="px-3 py-2 text-muted-foreground">+1.2%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
             评估口径：下发规模=策略派发工单实际下发客户数；触达率=成功触达客户数/下发规模；办理率=办理客户数/成功触达客户数；
             达成率=实际办理量/策略目标量；改善幅度=本期核心指标较基期变化，正值表示指标向好。数据来源为策略调度工单执行结果与评估中心指标数据。
@@ -427,5 +474,51 @@ function InfoRow({ label, value, mono }: { label: string; value: string; mono?: 
       <span className="text-muted-foreground">{label}</span>
       <span className={`text-foreground ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
     </div>
+  );
+}
+
+function CompareDialog({ open, onClose, records }: { open: boolean; onClose: () => void; records: EffectRecord[] }) {
+  return (
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <GitCompare className="h-4 w-4 text-primary" />
+            策略横向对比
+          </DialogTitle>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th className="px-3 py-2 font-medium">策略名称</th>
+                <th className="px-3 py-2 font-medium">业务场景</th>
+                <th className="px-3 py-2 font-medium">下发规模</th>
+                <th className="px-3 py-2 font-medium">触达率</th>
+                <th className="px-3 py-2 font-medium">办理率</th>
+                <th className="px-3 py-2 font-medium">达成率</th>
+                <th className="px-3 py-2 font-medium">改善幅度</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((r) => (
+                <tr key={r.id} className="border-b border-border">
+                  <td className="px-3 py-2 text-foreground">{r.strategyName}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.scenarios.join('、')}</td>
+                  <td className="px-3 py-2">{r.scale.toLocaleString()}</td>
+                  <td className="px-3 py-2">{r.touchRate}%</td>
+                  <td className="px-3 py-2">{r.dealRate}%</td>
+                  <td className="px-3 py-2 font-medium">{r.achievementRate}%</td>
+                  <td className={`px-3 py-2 ${r.improvement >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{r.improvement > 0 ? '+' : ''}{r.improvement}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={onClose}>关闭</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

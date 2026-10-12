@@ -2,12 +2,27 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Inbox, Search, Sparkles } from 'lucide-react';
+import { Check, Inbox, MoreHorizontal, Search, Send, Sparkles, UserPlus, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -16,6 +31,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+
+type DiagnoseStatus = '待处理' | '已受理' | '已拒收' | '已转派' | '已忽略' | '已制定';
+
+interface AcceptRecord {
+  operator: string;
+  time: string;
+  conclusion: string;
+}
 
 interface DiagnosticConclusion {
   id: string;
@@ -29,7 +53,8 @@ interface DiagnosticConclusion {
   suggestedStrategyCount: number;
   receivedAt: string;
   receiveChannel: string;
-  status: '待处理' | '已制定';
+  status: DiagnoseStatus;
+  acceptRecord?: AcceptRecord;
 }
 
 const DIAGNOSTIC_CONCLUSIONS: DiagnosticConclusion[] = [
@@ -43,24 +68,93 @@ const DIAGNOSTIC_CONCLUSIONS: DiagnosticConclusion[] = [
 
 const SCENARIOS = ['流量运营', '中高端客户运营', '离网维系', '家庭融合运营', '国际业务运营', '增量运营'];
 
+const STATUS_STYLE: Record<DiagnoseStatus, string> = {
+  待处理: 'bg-destructive/10 text-destructive hover:bg-destructive/10',
+  已受理: 'bg-primary/10 text-primary hover:bg-primary/10',
+  已拒收: 'bg-muted text-muted-foreground hover:bg-muted',
+  已转派: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
+  已忽略: 'bg-muted text-muted-foreground hover:bg-muted',
+  已制定: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100',
+};
+
 function StatusBadge({ status }: { status: DiagnosticConclusion['status'] }) {
-  return status === '待处理' ? (
-    <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/10">待处理</Badge>
-  ) : (
-    <Badge className="bg-primary/10 text-primary hover:bg-primary/10">已制定</Badge>
-  );
+  return <Badge className={STATUS_STYLE[status]}>{status}</Badge>;
 }
+
+const RECEIVERS = ['张耀辉', '王芳', '赵敏', '陈晨', '李经理'];
 
 export default function ReceiveDiagnosisPage() {
   const router = useRouter();
-  const [data] = useState<DiagnosticConclusion[]>(DIAGNOSTIC_CONCLUSIONS);
+  const [data, setData] = useState<DiagnosticConclusion[]>(DIAGNOSTIC_CONCLUSIONS);
   const [keyword, setKeyword] = useState('');
   const [scenario, setScenario] = useState('全部');
   const [channel, setChannel] = useState('全部');
   const [range, setRange] = useState('近7天');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [dialog, setDialog] = useState<{ mode: '拒收' | '转派' | '忽略'; item: DiagnosticConclusion } | null>(null);
+  const [reason, setReason] = useState('');
+  const [receiver, setReceiver] = useState('');
   const PAGE_SIZE = 15;
+
+  // 受理动作：承接（进入定策）
+  const handleAccept = (item: DiagnosticConclusion) => {
+    setData((prev) =>
+      prev.map((d) =>
+        d.id === item.id
+          ? {
+              ...d,
+              status: '已受理',
+              acceptRecord: {
+                operator: '张耀辉',
+                time: new Date().toLocaleString('zh-CN', { hour12: false }),
+                conclusion: '承接，进入定策',
+              },
+            }
+          : d,
+      ),
+    );
+    router.push(
+      `/workspace/strategy/matching?indicator=${encodeURIComponent(item.indicatorName)}&conclusion=${encodeURIComponent(item.id)}`,
+    );
+  };
+
+  // 受理动作：拒收 / 转派 / 忽略（打开弹窗填写）
+  const openDialog = (mode: '拒收' | '转派' | '忽略', item: DiagnosticConclusion) => {
+    setReason('');
+    setReceiver('');
+    setDialog({ mode, item });
+  };
+
+  const confirmDialog = () => {
+    if (!dialog) return;
+    const conclusionMap: Record<string, string> = {
+      拒收: reason ? `拒收：${reason}` : '拒收',
+      转派: receiver ? `转派给 ${receiver}${reason ? `（${reason}）` : ''}` : '转派',
+      忽略: reason ? `忽略：${reason}` : '忽略',
+    };
+    const statusMap: Record<string, DiagnoseStatus> = {
+      拒收: '已拒收',
+      转派: '已转派',
+      忽略: '已忽略',
+    };
+    setData((prev) =>
+      prev.map((d) =>
+        d.id === dialog.item.id
+          ? {
+              ...d,
+              status: statusMap[dialog.mode],
+              acceptRecord: {
+                operator: '张耀辉',
+                time: new Date().toLocaleString('zh-CN', { hour12: false }),
+                conclusion: conclusionMap[dialog.mode],
+              },
+            }
+          : d,
+      ),
+    );
+    setDialog(null);
+  };
 
   const filtered = useMemo(() => {
     return data.filter((item) => {
@@ -253,14 +347,52 @@ export default function ReceiveDiagnosisPage() {
                     <StatusBadge status={item.status} />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-primary"
-                      onClick={() => handleGoFormulate(item)}
-                    >
-                      去制定
-                    </Button>
+                    {item.status === '待处理' ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1">
+                            受理
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleAccept(item)}>
+                            <Check className="mr-2 h-4 w-4" /> 承接（进入定策）
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDialog('拒收', item)}>
+                            <X className="mr-2 h-4 w-4" /> 拒收
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDialog('转派', item)}>
+                            <Send className="mr-2 h-4 w-4" /> 转派
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDialog('忽略', item)}>
+                            <MoreHorizontal className="mr-2 h-4 w-4" /> 忽略
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : item.status === '已受理' ? (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-primary"
+                        onClick={() => handleGoFormulate(item)}
+                      >
+                        去制定
+                      </Button>
+                    ) : item.status === '已制定' ? (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-muted-foreground"
+                        onClick={() => handleGoFormulate(item)}
+                      >
+                        查看
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {item.acceptRecord?.conclusion ?? '已处理'}
+                      </span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -286,6 +418,64 @@ export default function ReceiveDiagnosisPage() {
           </div>
         </div>
       </section>
+
+      {/* 受理弹窗（拒收/转派/忽略） */}
+      <Dialog open={!!dialog} onOpenChange={(open) => !open && setDialog(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>{dialog?.mode}诊断结论</DialogTitle>
+            <DialogDescription>
+              诊断结论：{dialog?.item.indicatorName}（{dialog?.item.id}）
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {dialog?.mode === '转派' && (
+              <div className="space-y-2">
+                <Label>转派接收方</Label>
+                <Select value={receiver} onValueChange={setReceiver}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择接收方" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECEIVERS.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>
+                {dialog?.mode === '转派'
+                  ? '转派说明（可选）'
+                  : dialog?.mode === '拒收'
+                    ? '拒收理由'
+                    : '忽略说明（可选）'}
+              </Label>
+              <Textarea
+                placeholder={
+                  dialog?.mode === '转派'
+                    ? '请输入转派说明'
+                    : dialog?.mode === '拒收'
+                      ? '请输入拒收理由'
+                      : '请输入忽略说明'
+                }
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialog(null)}>
+              取消
+            </Button>
+            <Button onClick={confirmDialog}>确认{dialog?.mode}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

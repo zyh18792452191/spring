@@ -12,6 +12,7 @@ function StrategyMatchingPageInner() {
       indicatorId={searchParams.get('indicatorId') || undefined}
       from={searchParams.get('from') || undefined}
       tab={searchParams.get('tab') || undefined}
+      template={searchParams.get('template') || undefined}
     />
   );
 }

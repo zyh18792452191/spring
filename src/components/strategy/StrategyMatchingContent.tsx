@@ -129,11 +129,12 @@ interface StrategyMatchingContentProps {
   indicatorId?: string;        // 默认 ''
   from?: string;               // 默认 'churn-retention'
   tab?: string;                // 默认 'overview'
+  template?: string;           // 从模板/最佳实践带入定策的模板ID
   onReturn?: () => void;       // 提供时"返回"按钮调用它，否则保持原 router.push 跳转行为
   onNext?: (info: { indicatorName: string; indicatorId: string; from: string }) => void; // 提供时"下一步"调用它，否则保持原跳转
 }
 
-function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId = '', from = 'churn-retention', tab = 'overview', onReturn, onNext }: StrategyMatchingContentProps) {
+function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId = '', from = 'churn-retention', tab = 'overview', template, onReturn, onNext }: StrategyMatchingContentProps) {
   const router = useRouter();
   const indicatorName = indicatorNameProp || '一降到底规模';
   const selectedIndicatorId = indicatorId;
@@ -257,7 +258,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
       onNext({ indicatorName, indicatorId: selectedIndicatorId, from });
       return;
     }
-    router.push(`/workspace/strategy/dispatch?indicatorName=${encodeURIComponent(indicatorName)}&indicatorId=${selectedIndicatorId}&from=${from}`);
+    router.push(`/workspace/strategy/activity-config?conclusion=${encodeURIComponent(indicatorName)}&strategy=STR-2026-0301&from=${from}`);
   };
 
   // 删除根因指标卡片
@@ -743,40 +744,103 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
   return (
     <>
       <div className="space-y-6">
-        {/* 步骤导航 */}
-        <div className="flex items-center justify-center gap-8 mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center">
-              <Check className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-medium text-gray-900">数据洞察</span>
-        </div>
-        <div className="w-24 h-0.5 bg-[#3B82F6]"></div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center">
-            <Check className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-medium text-[#3B82F6]">策略匹配</span>
-        </div>
-        <div className="w-24 h-0.5 bg-gray-300"></div>
+        {/* 步骤导航 - 五步链路 */}
+        <div className="flex items-center justify-center gap-3 mb-8 flex-wrap">
+          {['接收诊断', '历史效果参照', 'AI定策与比选', '策略编辑', '活动配置'].map((step, idx) => (
+            <div key={step} className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">3</span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${idx <= 3 ? 'bg-[#3B82F6]' : 'bg-gray-300'}`}>
+                  {idx <= 3 ? <Check className="w-4 h-4 text-white" /> : <span className="text-white text-sm font-medium">{idx + 1}</span>}
                 </div>
-                <span className="text-sm font-medium text-gray-400">调度派发</span>
+                <span className={`text-sm font-medium ${idx <= 3 ? 'text-gray-900' : 'text-gray-400'}`}>{step}</span>
               </div>
+              {idx < 4 && <div className={`w-10 h-0.5 ${idx < 3 ? 'bg-[#3B82F6]' : 'bg-gray-300'}`}></div>}
             </div>
+          ))}
+        </div>
 
             {/* 页面标题 */}
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">策略匹配</h1>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">策略制定</h1>
               <p className="text-sm text-gray-600">当前分析指标：{indicatorName}</p>
             </div>
 
-            {/* 根因指标 */}
+            {/* 历史效果参照 */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4 text-[#3B82F6]" />
+                <h2 className="text-lg font-semibold text-gray-900">历史效果参照</h2>
+                {template && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs text-[#3B82F6]">
+                    已带入模板 {template}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mb-4">基于评估结果推荐相似策略，支持横向对比历史效果。</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-gray-500">
+                      <th className="py-2 pr-4 font-medium">相似策略</th>
+                      <th className="py-2 pr-4 font-medium">业务场景</th>
+                      <th className="py-2 pr-4 font-medium">覆盖客群</th>
+                      <th className="py-2 pr-4 font-medium">触达率</th>
+                      <th className="py-2 pr-4 font-medium">转化率</th>
+                      <th className="py-2 font-medium">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { name: '乌鲁木齐中低端 5G 升档权益策略', scene: '流量运营', group: '5G终端未升档客户', reach: '42.6%', conv: '18.3%' },
+                      { name: '喀什融合套餐提值策略', scene: '家庭融合运营', group: '单产品客户', reach: '38.1%', conv: '15.7%' },
+                      { name: '阿克苏离网维系关怀策略', scene: '离网维系', group: '高危离网客户', reach: '51.2%', conv: '22.9%' },
+                    ].map((s) => (
+                      <tr key={s.name} className="border-b border-gray-100">
+                        <td className="py-2 pr-4 text-gray-900">{s.name}</td>
+                        <td className="py-2 pr-4 text-gray-600">{s.scene}</td>
+                        <td className="py-2 pr-4 text-gray-600">{s.group}</td>
+                        <td className="py-2 pr-4 text-gray-600">{s.reach}</td>
+                        <td className="py-2 pr-4 text-gray-600">{s.conv}</td>
+                        <td className="py-2"><Button variant="outline" size="sm" className="border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50">引用</Button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* AI 定策与比选 */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Bot className="w-4 h-4 text-[#3B82F6]" />
+                <h2 className="text-lg font-semibold text-gray-900">AI 定策与比选</h2>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">AI 生成多方案供比选，选定方案进入策略编辑。</p>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { name: '方案 A · 升档礼包', confidence: '92%', desc: '套餐升档 + 流量包折扣，短信+外呼双触达', effect: '预期转化 18.3%' },
+                  { name: '方案 B · 权益回馈', confidence: '86%', desc: '专属权益礼包，网格电话触达确认意愿', effect: '预期转化 15.7%' },
+                  { name: '方案 C · 关怀维系', confidence: '78%', desc: '先关怀回访再推荐轻量套餐，降低感知门槛', effect: '预期转化 12.9%' },
+                ].map((p, i) => (
+                  <div key={p.name} className={`rounded-lg border p-4 ${i === 0 ? 'border-[#3B82F6] bg-blue-50/40' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-900">{p.name}</span>
+                      {i === 0 && <Badge className="bg-[#3B82F6] text-white">推荐</Badge>}
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">置信度 {p.confidence} · {p.effect}</div>
+                    <p className="text-sm text-gray-600 mb-3">{p.desc}</p>
+                    <Button size="sm" variant={i === 0 ? 'default' : 'outline'} className={i === 0 ? '' : 'border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50'}>
+                      {i === 0 ? '采用此方案' : '比选'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 策略编辑（根因指标） */}
             <div className="space-y-6 mb-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">根因指标</h2>
+                <h2 className="text-lg font-semibold text-gray-900">策略编辑</h2>
                 <Button variant="outline" size="sm" onClick={handleOpenAddIndicatorDialog} className="border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50">
                   <Plus className="w-4 h-4 mr-1" />
                   新增指标
