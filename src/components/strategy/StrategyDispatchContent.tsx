@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import PersonnelMatchAgentStreamPanel from '@/components/dispatch-agent/PersonnelMatchAgentStreamPanel';
@@ -167,6 +167,21 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
 
   // 任务列表
   const [taskList, setTaskList] = useState<TaskItem[]>(MOCK_TASK_LIST);
+
+  // 策略详情查看
+  const [strategyDetail, setStrategyDetail] = useState<TaskSubRow | null>(null);
+
+  // 新增策略
+  const [showAddStrategy, setShowAddStrategy] = useState(false);
+  const [addStrategyForm, setAddStrategyForm] = useState<TaskSubRow>({
+    riskCustomerGroup: '',
+    strategy: '',
+    selectionTag: '圈选所有标签',
+    dispatchAreas: '',
+  });
+
+  // 关联活动配置
+  const [linkedActivity, setLinkedActivity] = useState('');
 
   // IOP处理人
   const [iopHandler, setIopHandler] = useState<{ id: string; name: string } | null>(null);
@@ -502,7 +517,12 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
 
         {/* 任务列表 */}
         <div className="bg-card rounded-lg border p-6 mb-4">
-          <h3 className="text-base font-semibold mb-4">任务列表</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">任务列表</h3>
+            <Button size="sm" variant="outline" onClick={() => setShowAddStrategy(true)}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> 新增策略
+            </Button>
+          </div>
 
           {/* 人员匹配Agent */}
           <div className="mb-4">
@@ -573,9 +593,14 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-left">
-                          <p className="line-clamp-2 text-muted-foreground" title={row.strategy}>
+                          <button
+                            type="button"
+                            className="line-clamp-2 text-left text-primary hover:underline"
+                            title="点击查看策略详情"
+                            onClick={() => setStrategyDetail(row)}
+                          >
                             {row.strategy}
-                          </p>
+                          </button>
                         </td>
                         <td className="px-4 py-3 text-left">
                           <button className="text-primary text-xs hover:underline">
@@ -677,6 +702,26 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
                     ? '工单提交后将进入审批流程，审批通过后需在待办工单中发起剧本营销，客群将自动带入IOP剧本营销页面'
                     : '工单提交后将进入审批流程，审批通过后派发至相关系统，并可在工作台进行跟踪'}
                 </span>
+              </div>
+            </div>
+
+            {/* 关联活动配置 */}
+            <div className="flex items-center gap-3">
+              <Label className="w-28 shrink-0 text-sm text-right">关联活动配置</Label>
+              <Select value={linkedActivity} onValueChange={setLinkedActivity}>
+                <SelectTrigger className="w-[360px]">
+                  <SelectValue placeholder="选择已审批通过的活动（可选）" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">不关联</SelectItem>
+                  <SelectItem value="ACT-2026-0821-007">乌鲁木齐存量客户套餐升档专项活动</SelectItem>
+                  <SelectItem value="ACT-2026-0826-003">高价值客户离网挽留权益活动</SelectItem>
+                  <SelectItem value="ACT-2026-0820-004">家庭宽带融合升档专项活动</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">关联后，策略调度与活动配置形成闭环追踪</span>
               </div>
             </div>
 
@@ -922,6 +967,90 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
               ))}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 策略详情弹窗 */}
+      <Dialog open={!!strategyDetail} onOpenChange={(open) => !open && setStrategyDetail(null)}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>策略详情</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-muted-foreground mb-1">潜在风险客群</div>
+              <Badge variant={strategyDetail?.riskCustomerGroup === '兜底规则' ? 'secondary' : 'outline'}>
+                {strategyDetail?.riskCustomerGroup}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">策略描述</div>
+              <p className="text-foreground leading-relaxed">{strategyDetail?.strategy}</p>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">圈选标签</div>
+              <p className="text-foreground">{strategyDetail?.selectionTag}</p>
+            </div>
+            <div>
+              <div className="text-muted-foreground mb-1">派发区域</div>
+              <p className="text-foreground">{strategyDetail?.dispatchAreas}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 新增策略弹窗 */}
+      <Dialog open={showAddStrategy} onOpenChange={setShowAddStrategy}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>新增策略</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>潜在风险客群</Label>
+              <Input
+                value={addStrategyForm.riskCustomerGroup}
+                onChange={(e) => setAddStrategyForm((prev) => ({ ...prev, riskCustomerGroup: e.target.value }))}
+                placeholder="如：潜在降档客户"
+              />
+            </div>
+            <div>
+              <Label>策略描述</Label>
+              <Textarea
+                value={addStrategyForm.strategy}
+                onChange={(e) => setAddStrategyForm((prev) => ({ ...prev, strategy: e.target.value }))}
+                rows={3}
+                placeholder="请输入策略描述"
+              />
+            </div>
+            <div>
+              <Label>圈选标签</Label>
+              <Input
+                value={addStrategyForm.selectionTag}
+                onChange={(e) => setAddStrategyForm((prev) => ({ ...prev, selectionTag: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>派发区域</Label>
+              <Input
+                value={addStrategyForm.dispatchAreas}
+                onChange={(e) => setAddStrategyForm((prev) => ({ ...prev, dispatchAreas: e.target.value }))}
+                placeholder="如：乌鲁木齐、昌吉、伊犁"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddStrategy(false)}>取消</Button>
+            <Button onClick={() => {
+              if (!addStrategyForm.strategy.trim()) return;
+              setTaskList((prev) => {
+                const last = prev[prev.length - 1];
+                return [...prev, { id: (last?.id ?? 0) + 1, subIndicator: indicatorName, rows: [{ ...addStrategyForm }] }];
+              });
+              setShowAddStrategy(false);
+              setAddStrategyForm({ riskCustomerGroup: '', strategy: '', selectionTag: '圈选所有标签', dispatchAreas: '' });
+            }}>确认新增</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

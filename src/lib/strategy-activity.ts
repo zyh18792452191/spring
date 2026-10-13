@@ -10,7 +10,7 @@ export type ActivityStatus =
   | '沉淀中'
   | '已闭环';
 
-export type ActivityType = 'IOP普通营销' | '剧本营销' | '多波次营销';
+export type ActivityType = 'IOP普通营销' | '剧本营销' | '多波次营销' | '网格通';
 
 export type TimelineNodeStatus = '完成' | '进行中' | '阻塞' | '未开始';
 
@@ -104,7 +104,7 @@ export const ACTIVITY_STATUS_LIST: ActivityStatus[] = [
 ];
 
 /** 活动类型列表 */
-export const ACTIVITY_TYPE_LIST: ActivityType[] = ['IOP普通营销', '剧本营销', '多波次营销'];
+export const ACTIVITY_TYPE_LIST: ActivityType[] = ['IOP普通营销', '剧本营销', '多波次营销', '网格通'];
 
 /** 业务场景列表 */
 export const ACTIVITY_SCENARIO_LIST = [

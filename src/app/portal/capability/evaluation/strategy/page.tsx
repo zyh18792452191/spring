@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { ChevronRight, Download, Info, List } from 'lucide-react';
+import { Check, ChevronRight, Download, Info, List } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { provinces } from '@/data/provinces';
 
@@ -751,6 +752,7 @@ export default function StrategyAnalysisPage() {
   const [trendMetric, setTrendMetric] = useState('dispatched');
   const [regionMetric, setRegionMetric] = useState('dispatched');
   const [currentPage, setCurrentPage] = useState(1);
+  const [execRecordRow, setExecRecordRow] = useState<RowData | null>(null);
   const pageSize = 20;
 
   const currentLevel = drillPath.length;
@@ -1190,7 +1192,10 @@ export default function StrategyAnalysisPage() {
                       {/* 操作 */}
                       <td className={`px-2 py-2 text-center ${stickyCls}`}
                         style={{ position: 'sticky', right: 0, zIndex: 5, whiteSpace: 'nowrap', boxShadow: '-2px 0 4px -2px rgba(0,0,0,0.1)' }}>
-                        <button className="text-primary hover:underline cursor-pointer inline-flex items-center gap-0.5 text-xs whitespace-nowrap">
+                        <button
+                          className="text-primary hover:underline cursor-pointer inline-flex items-center gap-0.5 text-xs whitespace-nowrap"
+                          onClick={() => setExecRecordRow(row)}
+                        >
                           <List className="w-3 h-3 shrink-0" />
                           执行记录
                         </button>
@@ -1215,6 +1220,81 @@ export default function StrategyAnalysisPage() {
         </Card>
         </div>
       </div>
+
+      {/* 执行记录弹窗 */}
+      <Dialog open={!!execRecordRow} onOpenChange={(open) => !open && setExecRecordRow(null)}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>执行记录 - {execRecordRow?.regionName}（{execRecordRow?.statMonth}）</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 text-sm">
+            <div>
+              <div className="font-medium mb-3">触达转化漏斗</div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-muted-foreground">目标客户量</span>
+                    <span className="font-medium">{(execRecordRow?.monthTarget ?? 0).toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: '100%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-muted-foreground">触达客户数</span>
+                    <span className="font-medium">{(execRecordRow?.monthReached ?? 0).toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/70" style={{ width: `${((execRecordRow?.monthReached ?? 0) / Math.max(execRecordRow?.monthTarget ?? 0, 1)) * 100}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-muted-foreground">营销成功量</span>
+                    <span className="font-medium">{(execRecordRow?.monthSuccess ?? 0).toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500" style={{ width: `${((execRecordRow?.monthSuccess ?? 0) / Math.max(execRecordRow?.monthReached ?? 0, 1)) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-medium mb-3">执行节点状态</div>
+              <div className="flex items-center gap-2">
+                {['派发', '接单', '执行', '完成'].map((node, i) => (
+                  <div key={node} className="flex items-center gap-2">
+                    {i > 0 && <div className="w-8 h-px bg-border" />}
+                    <div className="flex flex-col items-center">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs mt-1 text-muted-foreground">{node}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border p-3 text-center">
+                <div className="text-xs text-muted-foreground">完成率</div>
+                <div className="text-lg font-semibold mt-1">{((execRecordRow?.monthCompletionRate ?? 0) * 100).toFixed(1)}%</div>
+              </div>
+              <div className="rounded-lg border border-border p-3 text-center">
+                <div className="text-xs text-muted-foreground">触达率</div>
+                <div className="text-lg font-semibold mt-1">{((execRecordRow?.monthReachRate ?? 0) * 100).toFixed(1)}%</div>
+              </div>
+              <div className="rounded-lg border border-border p-3 text-center">
+                <div className="text-xs text-muted-foreground">成功率</div>
+                <div className="text-lg font-semibold mt-1">{((execRecordRow?.monthSuccessRate ?? 0) * 100).toFixed(1)}%</div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }

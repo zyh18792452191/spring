@@ -82,6 +82,47 @@ const availableIndicators = [
   { id: '6', name: '满意度', direction: 'positive' as IndicatorDirection },
 ];
 
+// 指标元信息：指标ID / 指标描述 / 异常原因（AI 诊断根因）
+const INDICATOR_META: Record<string, { id: string; desc: string; reason: string }> = {
+  '一降到底规模': {
+    id: 'IND-DECLINE-001',
+    desc: '统计周期内套餐消费降至保底档位（一降到底）的客户规模，用于识别客户价值流失风险',
+    reason: '中低端客户 5G 终端已具备但套餐未升档，存量升档触点缺失',
+  },
+  '离网率': {
+    id: 'IND-CHURN-001',
+    desc: '统计周期内主动离网客户数占在网客户总数的比例，衡量客户维系成效',
+    reason: '到期前 15 天触达覆盖率不足，竞品低价套餐分流',
+  },
+  '降档率': {
+    id: 'IND-DOWNGRADE-001',
+    desc: '统计周期内套餐档位下调的客户占比，反映客户消费能力下降',
+    reason: '客户消费能力下降或竞品争夺，套餐与需求不匹配',
+  },
+  '超套率': {
+    id: 'IND-OVERUSE-001',
+    desc: '统计周期内流量使用超出套餐额度的客户占比',
+    reason: '套餐流量额度与客户实际使用量不匹配',
+  },
+  '保有率': {
+    id: 'IND-RETAIN-001',
+    desc: '统计周期内客户保有比例，衡量客户留存与维系效果',
+    reason: '',
+  },
+  '满意度': {
+    id: 'IND-SAT-001',
+    desc: '客户满意度评分，反映客户对服务的整体评价',
+    reason: '',
+  },
+};
+
+// AI 定策与比选方案数据
+const AI_PLANS = [
+  { name: '方案 A · 升档礼包', confidence: '92%', desc: '套餐升档 + 流量包折扣，短信+外呼双触达', effect: '预期转化 18.3%' },
+  { name: '方案 B · 权益回馈', confidence: '86%', desc: '专属权益礼包，网格电话触达确认意愿', effect: '预期转化 15.7%' },
+  { name: '方案 C · 关怀维系', confidence: '78%', desc: '先关怀回访再推荐轻量套餐，降低感知门槛', effect: '预期转化 12.9%' },
+];
+
 // 根据指标方向获取默认派发地州
 const getDefaultProvinces = (direction: IndicatorDirection): { provinces: string[]; rankType: ProvinceRankType } => {
   if (direction === 'positive') {
@@ -138,6 +179,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
   const router = useRouter();
   const indicatorName = indicatorNameProp || '一降到底规模';
   const selectedIndicatorId = indicatorId;
+  const indicatorMeta = INDICATOR_META[indicatorName] ?? { id: selectedIndicatorId || 'IND-DEFAULT', desc: '', reason: '' };
 
   // 根据指标名称判断指标方向
   const getIndicatorDirection = (name: string): IndicatorDirection => {
@@ -217,6 +259,23 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     isOpen: false,
     selectedIndicatorId: '',
   });
+
+  // 历史效果参照：已引用的策略名（点击"引用"回填）
+  const [referencedStrategy, setReferencedStrategy] = useState<string>('');
+  // AI 定策与比选：当前选中的方案
+  const [selectedPlan, setSelectedPlan] = useState<string>(AI_PLANS[0].name);
+  // 方案比选弹窗开关
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  // 引用历史策略要素（回填产品/话术/渠道提示）
+  const handleReferenceStrategy = (strategyName: string) => {
+    setReferencedStrategy(strategyName);
+  };
+
+  // 采用 / 切换 AI 方案
+  const handleAdoptPlan = (planName: string) => {
+    setSelectedPlan(planName);
+  };
 
   // 编辑原因分析弹窗状态
   const [editAnalysisDialog, setEditAnalysisDialog] = useState({
@@ -763,6 +822,11 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h1 className="text-2xl font-semibold text-gray-900 mb-2">策略制定</h1>
               <p className="text-sm text-gray-600">当前分析指标：{indicatorName}</p>
+              <div className="mt-3 space-y-1 text-sm text-gray-600">
+                <p><span className="text-gray-500">指标ID：</span><span className="font-medium text-gray-800">{indicatorMeta.id}</span></p>
+                <p><span className="text-gray-500">指标描述：</span>{indicatorMeta.desc}</p>
+                <p><span className="text-gray-500">异常原因：</span>{indicatorMeta.reason || '—'}</p>
+              </div>
             </div>
 
             {/* 历史效果参照 */}
@@ -801,7 +865,12 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                         <td className="py-2 pr-4 text-gray-600">{s.group}</td>
                         <td className="py-2 pr-4 text-gray-600">{s.reach}</td>
                         <td className="py-2 pr-4 text-gray-600">{s.conv}</td>
-                        <td className="py-2"><Button variant="outline" size="sm" className="border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50">引用</Button></td>
+                        <td className="py-2">
+                          <Button variant="outline" size="sm" onClick={() => handleReferenceStrategy(s.name)}
+                            className={referencedStrategy === s.name ? 'bg-blue-50 border-[#3B82F6] text-[#3B82F6]' : 'border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50'}>
+                            {referencedStrategy === s.name ? '已引用' : '引用'}
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -817,24 +886,44 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
               </div>
               <p className="text-sm text-gray-600 mb-4">AI 生成多方案供比选，选定方案进入策略编辑。</p>
               <div className="grid grid-cols-3 gap-4">
-                {[
-                  { name: '方案 A · 升档礼包', confidence: '92%', desc: '套餐升档 + 流量包折扣，短信+外呼双触达', effect: '预期转化 18.3%' },
-                  { name: '方案 B · 权益回馈', confidence: '86%', desc: '专属权益礼包，网格电话触达确认意愿', effect: '预期转化 15.7%' },
-                  { name: '方案 C · 关怀维系', confidence: '78%', desc: '先关怀回访再推荐轻量套餐，降低感知门槛', effect: '预期转化 12.9%' },
-                ].map((p, i) => (
-                  <div key={p.name} className={`rounded-lg border p-4 ${i === 0 ? 'border-[#3B82F6] bg-blue-50/40' : 'border-gray-200'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-gray-900">{p.name}</span>
-                      {i === 0 && <Badge className="bg-[#3B82F6] text-white">推荐</Badge>}
+                {AI_PLANS.map((p) => {
+                  const isSelected = selectedPlan === p.name;
+                  const isRecommended = p.name === AI_PLANS[0].name;
+                  return (
+                    <div key={p.name}
+                      onClick={() => handleAdoptPlan(p.name)}
+                      className={`cursor-pointer rounded-lg border p-4 transition-all ${isSelected ? 'border-[#3B82F6] bg-blue-50/40 ring-1 ring-[#3B82F6]' : 'border-gray-200 hover:border-[#3B82F6]/60'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-900">{p.name}</span>
+                        {isRecommended && <Badge className="bg-[#3B82F6] text-white">推荐</Badge>}
+                        {isSelected && !isRecommended && <Badge className="bg-green-100 text-green-700">已选中</Badge>}
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">置信度 {p.confidence} · {p.effect}</div>
+                      <p className="text-sm text-gray-600 mb-3">{p.desc}</p>
+                      {isRecommended ? (
+                        <Button size="sm" variant={isSelected ? 'default' : 'outline'}
+                          onClick={(e) => { e.stopPropagation(); handleAdoptPlan(p.name); }}
+                          className={isSelected ? '' : 'border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50'}>
+                          {isSelected ? '已采用' : '采用此方案'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline"
+                          onClick={(e) => { e.stopPropagation(); setCompareOpen(true); }}
+                          className="border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50">
+                          比选
+                        </Button>
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">置信度 {p.confidence} · {p.effect}</div>
-                    <p className="text-sm text-gray-600 mb-3">{p.desc}</p>
-                    <Button size="sm" variant={i === 0 ? 'default' : 'outline'} className={i === 0 ? '' : 'border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50'}>
-                      {i === 0 ? '采用此方案' : '比选'}
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+              {/* 引用历史策略提示 */}
+              {referencedStrategy && (
+                <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-[#3B82F6]">
+                  <Sparkles className="w-4 h-4" />
+                  已引用历史策略「{referencedStrategy}」的要素，带入下方策略编辑区
+                </div>
+              )}
             </div>
 
             {/* 策略编辑（根因指标） */}
@@ -1358,6 +1447,50 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
             </Button>
             <Button onClick={handleConfirmProvinces} className="bg-[#3B82F6] hover:bg-[#2563EB]">
               确认选择
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 方案比选弹窗 */}
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>AI 方案比选</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left text-gray-500">
+                  <th className="py-2 pr-4 font-medium">方案</th>
+                  <th className="py-2 pr-4 font-medium">置信度</th>
+                  <th className="py-2 pr-4 font-medium">方案要点</th>
+                  <th className="py-2 pr-4 font-medium">预期效果</th>
+                  <th className="py-2 font-medium">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {AI_PLANS.map((p) => (
+                  <tr key={p.name} className={`border-b border-gray-100 ${selectedPlan === p.name ? 'bg-blue-50/40' : ''}`}>
+                    <td className="py-2 pr-4 text-gray-900 font-medium">{p.name}</td>
+                    <td className="py-2 pr-4 text-gray-600">{p.confidence}</td>
+                    <td className="py-2 pr-4 text-gray-600">{p.desc}</td>
+                    <td className="py-2 pr-4 text-gray-600">{p.effect}</td>
+                    <td className="py-2">
+                      <Button size="sm" variant={selectedPlan === p.name ? 'default' : 'outline'}
+                        onClick={() => handleAdoptPlan(p.name)}
+                        className={selectedPlan === p.name ? '' : 'border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50'}>
+                        {selectedPlan === p.name ? '已采用' : '采用'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setCompareOpen(false)} className="bg-[#3B82F6] hover:bg-[#2563EB]">
+              确定
             </Button>
           </DialogFooter>
         </DialogContent>

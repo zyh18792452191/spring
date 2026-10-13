@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Eye, ShieldCheck, X } from 'lucide-react';
+import { Check, Eye, Send, ShieldCheck, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ const RECORDS: ApprovalRecord[] = [
   { id: 'APR-003', activityId: 'ACT-2026-0826-003', activityName: '高价值客户离网挽留权益活动', scenario: '离网维系', submitter: '赵敏', submitTime: '2026-08-26 18:40', priority: '高', status: '已通过', approver: '李经理', approveTime: '2026-08-26 19:00', comment: '同意，优先保障高价值客户' },
   { id: 'APR-004', activityId: 'ACT-2026-0820-004', activityName: '家庭宽带融合升档专项活动', scenario: '家庭融合运营', submitter: '陈晨', submitTime: '2026-08-20 10:00', priority: '中', status: '已通过', approver: '李经理', approveTime: '2026-08-20 10:30' },
   { id: 'APR-005', activityId: 'ACT-2026-0819-006', activityName: '国际漫游流量包推广活动', scenario: '国际业务运营', submitter: '张耀辉', submitTime: '2026-08-19 16:00', priority: '低', status: '已驳回', approver: '李经理', approveTime: '2026-08-19 17:00', comment: '客群规模偏小，建议合并到下一期活动' },
+  { id: 'APR-006', activityId: 'ACT-2026-0821-007', activityName: '乌鲁木齐存量客户套餐升档专项活动', scenario: '流量运营', submitter: '张耀辉', submitTime: '2026-08-21 09:30', priority: '高', status: '已通过', approver: '李经理', approveTime: '2026-08-21 10:00', comment: '同意，尽快发起调度' },
 ];
 
 const STATUS_STYLE: Record<ApprovalRecord['status'], string> = {
@@ -82,7 +83,7 @@ function ApprovalInner() {
     setRejectReason('');
   };
 
-  const renderTable = (list: ApprovalRecord[]) => (
+  const renderTable = (list: ApprovalRecord[], showDispatch = false) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -122,9 +123,16 @@ function ApprovalInner() {
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="ghost" onClick={() => router.push(`/workspace/strategy/activity-track?activity=${item.activityId}`)}>
-                    <Eye className="mr-1 h-3.5 w-3.5" /> 查看
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {showDispatch && item.status === '已通过' && (
+                      <Button size="sm" onClick={() => router.push(`/workspace/strategy/dispatch?from=approval&indicatorName=${encodeURIComponent(item.activityName)}`)}>
+                        <Send className="mr-1 h-3.5 w-3.5" /> 发起调度
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => router.push(`/workspace/strategy/activity-track?activity=${item.activityId}`)}>
+                      <Eye className="mr-1 h-3.5 w-3.5" /> 查看
+                    </Button>
+                  </div>
                 )}
               </TableCell>
             </TableRow>
@@ -151,7 +159,7 @@ function ApprovalInner() {
           {renderTable(pending)}
         </TabsContent>
         <TabsContent value="我发起的" className="mt-4 rounded-lg border border-border bg-card">
-          {renderTable(mine)}
+          {renderTable(mine, true)}
         </TabsContent>
         <TabsContent value="已审批" className="mt-4 rounded-lg border border-border bg-card">
           {renderTable(done)}

@@ -66,6 +66,13 @@ const DIAGNOSTIC_CONCLUSIONS: DiagnosticConclusion[] = [
   { id: 'DG-20260826-004', indicatorName: '融合套餐渗透率', scenario: '家庭融合运营', currentValue: '58.7%', baseValue: '61.4%', targetValue: '65.0%', achievementRate: 90.3, abnormalReason: '单卡客户融合路径未打通，家庭组网权益未有效宣传', suggestedStrategyCount: 2, receivedAt: '2026-08-26 15:22', receiveChannel: '指标树诊断结论', status: '待处理' },
 ];
 
+// 洞察中心 / AI 指标监控预警推送的待接收结论（手动接收入口模拟数据）
+const INSIGHT_PUSH_ITEMS: DiagnosticConclusion[] = [
+  { id: 'DG-20260828-021', indicatorName: '客户流失预警', scenario: '离网维系', currentValue: '预警中', baseValue: '1.05%', targetValue: '1.10%', achievementRate: 83.3, abnormalReason: 'AI指标监控预警触发：高价值客户异网活跃度连续3期上升', suggestedStrategyCount: 4, receivedAt: '2026-08-28 10:30', receiveChannel: 'AI 指标监控预警', status: '待处理' },
+  { id: 'DG-20260828-022', indicatorName: '套餐降档预警', scenario: '中高端客户运营', currentValue: '预警中', baseValue: '94.6%', targetValue: '95.0%', achievementRate: 91.2, abnormalReason: 'AI指标监控预警触发：中高端客户套餐降档率环比上升2.1pp', suggestedStrategyCount: 2, receivedAt: '2026-08-28 10:32', receiveChannel: 'AI 指标监控预警', status: '待处理' },
+  { id: 'DG-20260828-023', indicatorName: '流量超套预警', scenario: '流量运营', currentValue: '预警中', baseValue: '73.5%', targetValue: '80.0%', achievementRate: 90.8, abnormalReason: 'AI指标监控预警触发：低饱和套餐客户流量超套率异常抬升', suggestedStrategyCount: 3, receivedAt: '2026-08-28 10:35', receiveChannel: 'AI 指标监控预警', status: '待处理' },
+];
+
 const SCENARIOS = ['流量运营', '中高端客户运营', '离网维系', '家庭融合运营', '国际业务运营', '增量运营'];
 
 const STATUS_STYLE: Record<DiagnoseStatus, string> = {
@@ -95,6 +102,8 @@ export default function ReceiveDiagnosisPage() {
   const [dialog, setDialog] = useState<{ mode: '拒收' | '转派' | '忽略'; item: DiagnosticConclusion } | null>(null);
   const [reason, setReason] = useState('');
   const [receiver, setReceiver] = useState('');
+  const [showReceiveDialog, setShowReceiveDialog] = useState(false);
+  const [receiveSelected, setReceiveSelected] = useState<string[]>([]);
   const PAGE_SIZE = 15;
 
   // 受理动作：承接（进入定策）
@@ -193,12 +202,18 @@ export default function ReceiveDiagnosisPage() {
             接收指标树诊断与 AI 指标诊断的结论，按结论制定并派发策略，形成"诊断—定策—派发"联动。
           </p>
         </div>
-        <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-4 py-2">
-          <div className="text-xs text-muted-foreground">
-            待处理结论 <span className="ml-1 text-base font-semibold text-foreground">{data.filter((item) => item.status === '待处理').length}</span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            已制定 <span className="ml-1 text-base font-semibold text-foreground">{data.filter((item) => item.status === '已制定').length}</span>
+        <div className="flex items-center gap-3">
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setReceiveSelected([]); setShowReceiveDialog(true); }}>
+            <Inbox className="w-4 h-4" />
+            手动接收
+          </Button>
+          <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-4 py-2">
+            <div className="text-xs text-muted-foreground">
+              待处理结论 <span className="ml-1 text-base font-semibold text-foreground">{data.filter((item) => item.status === '待处理').length}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              已制定 <span className="ml-1 text-base font-semibold text-foreground">{data.filter((item) => item.status === '已制定').length}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -473,6 +488,54 @@ export default function ReceiveDiagnosisPage() {
               取消
             </Button>
             <Button onClick={confirmDialog}>确认{dialog?.mode}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 手动接收洞察诊断弹窗 */}
+      <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
+        <DialogContent className="sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle>接收洞察诊断</DialogTitle>
+            <DialogDescription>
+              洞察中心与 AI 指标监控预警推送的诊断结论，勾选后接收进入待处理列表。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {INSIGHT_PUSH_ITEMS.map((item) => (
+              <label key={item.id} className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/40">
+                <Checkbox
+                  checked={receiveSelected.includes(item.id)}
+                  onCheckedChange={(checked) => {
+                    setReceiveSelected((prev) =>
+                      checked ? [...prev, item.id] : prev.filter((id) => id !== item.id),
+                    );
+                  }}
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium">{item.indicatorName}</span>
+                    <Badge variant="secondary">{item.scenario}</Badge>
+                    <Badge className="bg-primary/10 text-primary">{item.receiveChannel}</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.abnormalReason}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReceiveDialog(false)}>取消</Button>
+            <Button
+              disabled={receiveSelected.length === 0}
+              onClick={() => {
+                const picked = INSIGHT_PUSH_ITEMS.filter((item) => receiveSelected.includes(item.id));
+                setData((prev) => [...picked, ...prev]);
+                setShowReceiveDialog(false);
+                setReceiveSelected([]);
+              }}
+            >
+              接收所选（{receiveSelected.length}）
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
