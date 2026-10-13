@@ -43,7 +43,7 @@ import {
   Handshake,
   History,
   BookOpen,
-  Smartphone,
+  // Smartphone,
   Play,
   LayoutTemplate,
   Monitor,
@@ -168,7 +168,8 @@ const navigation = [
           { name: '与知识中心协作', href: '/workspace/strategy-collab/knowledge', icon: BookOpen },
         ]
       },
-      { name: '网格通活动配置', href: '/workspace/strategy/grid-config', icon: Smartphone },
+      // 网格通活动配置菜单已隐藏（需求：隐藏剧本营销和网格通活动配置菜单）
+      // { name: '网格通活动配置', href: '/workspace/strategy/grid-config', icon: Smartphone },
     ]
   },
   {

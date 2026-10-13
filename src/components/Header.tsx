@@ -203,14 +203,14 @@ const menuItems: MenuItem[] = [
         path: '/portal/capability/strategy',
         children: [
           { name: '策略总览', path: '/portal/capability/strategy/overview' },
-          { name: '剧本营销', path: '/portal/capability/strategy/script-marketing' },
+          { name: '剧本营销', path: '/portal/capability/strategy/script-marketing', hidden: true },
           { name: '策略沉淀', path: '/workspace/strategy-repository/effect' },
           { name: '跨中心协作', path: '/workspace/strategy-collab/insight' },
           { name: '接收诊断', path: '/workspace/strategy/receive-diagnosis' },
           { name: '活动配置', path: '/workspace/strategy/activity-config' },
           { name: '策略审批', path: '/workspace/strategy/approval' },
           { name: '活动全链路追踪', path: '/workspace/strategy/activity-track' },
-          { name: '网格通活动配置', path: '/workspace/strategy/grid-config' },
+          { name: '网格通活动配置', path: '/workspace/strategy/grid-config', hidden: true },
         ],
       },
       {
