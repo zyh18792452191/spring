@@ -17,6 +17,8 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+import StrategyMakingPanel from '@/components/strategy/StrategyMakingPanel';
+import ActivityConfigDialog from '@/components/strategy/ActivityConfigDialog';
 
 // ==================== 默认数据 ====================
 
@@ -179,10 +181,9 @@ export default function DispatchPage() {
   const [taskName, setTaskName] = useState('');
   const [validStartDate, setValidStartDate] = useState('');
   const [validEndDate, setValidEndDate] = useState('');
-  const [scriptContent, setScriptContent] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiRecommended, setAiRecommended] = useState(false);
-  const [aiModified, setAiModified] = useState(false);
+  // 触客策略 - 策略制定（方案比选 + 营销话术）
+  const [confirmedStrategy, setConfirmedStrategy] = useState<{ plan: string; speech: string } | null>(null);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
 
   // 派单信息
   const dispatchSystem = '网格通';
@@ -221,34 +222,8 @@ export default function DispatchPage() {
   // 计算
   const totalHouseholds = communities.reduce((sum, c) => sum + c.taskCustomerCount, 0);
 
-  const canSubmit = taskName.trim() && validStartDate && validEndDate && scriptContent.trim()
+  const canSubmit = taskName.trim() && validStartDate && validEndDate && confirmedStrategy
     && executionRole && approver;
-
-  // AI推荐触客策略
-  // 页面加载时自动生成触客策略
-  useEffect(() => {
-    const tagFeatures = communityTags.map(t => t.category).join('、');
-    const customerFeatures = customerTags.flatMap(g => g.items.map(i => `${i.label}(${i.value})`)).join('、');
-    const communityCount = communities.length;
-    const customerCount = totalHouseholds;
-
-    const aiStrategy = `【触客策略-流量攻坚】
-
-目标客群特征：${tagFeatures}；${customerFeatures}。
-覆盖小区${communityCount}个，覆盖客户约${customerCount.toLocaleString()}户。
-
-触达渠道：短信先行触达 → 外呼跟进确认 → 线下走访促成。
-推荐产品：大流量套餐（月租+30元档）、流量加油包（10元5GB）、5G升级包。
-
-短信话术：尊敬的客户，您当前套餐流量使用已接近上限，升级大流量套餐每月仅需XX元，即可享受XXGB高速流量，点击链接立即办理 → [办理链接]
-
-外呼话术：您好，我是中国移动客户经理XX，注意到您近期流量使用较多，现有大流量套餐升级活动，每月仅需增加XX元即可获得XXGB流量，是否为您详细介绍？
-
-执行要点：① 重点强调流量超出后的资费差异，引导升级套餐；② 关注超套高发小区客户，优先推荐大流量套餐；③ 异网高风险小区客户侧重移动网络优势和服务体验；④ 零低流量客户侧重应用场景引导，激活流量使用需求。`;
-
-    setScriptContent(aiStrategy);
-    setAiRecommended(true);
-  }, []);
 
   const handleSubmit = () => {
     setShowConfirmModal(false);
@@ -497,61 +472,11 @@ export default function DispatchPage() {
           title="触客策略"
           required
         >
-          <div>
-            <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {aiRecommended && !aiModified && (
-                <span style={{
-                  padding: '2px 8px', borderRadius: '4px',
-                  fontSize: '11px', backgroundColor: '#e6f7ff', color: '#1677FF',
-                  border: '1px solid #91d5ff',
-                }}>
-                  AI推荐
-                </span>
-              )}
-              {aiModified && (
-                <span style={{
-                  padding: '2px 8px', borderRadius: '4px',
-                  fontSize: '11px', backgroundColor: '#fff7e6', color: '#fa8c16',
-                  border: '1px solid #ffd591',
-                }}>
-                  已修改
-                </span>
-              )}
-              <span style={{ fontSize: '12px', color: '#999' }}>
-                基于小区标签和客户筛选标签自动生成，可手动修改
-              </span>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <textarea
-                value={scriptContent}
-                onChange={e => {
-                  if (e.target.value.length <= 1000) {
-                    setScriptContent(e.target.value);
-                    if (aiRecommended) setAiModified(true);
-                  }
-                }}
-                placeholder="触客策略正在生成..."
-                rows={8}
-                style={{
-                  width: '100%', padding: '10px 12px',
-                  border: '1px solid #d9d9d9', borderRadius: '6px',
-                  fontSize: '14px', color: '#333', outline: 'none',
-                  resize: 'vertical', lineHeight: '1.6',
-                  backgroundColor: '#fff',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = '#1677FF'}
-                onBlur={e => e.currentTarget.style.borderColor = '#d9d9d9'}
-              />
-              <span style={{
-                position: 'absolute', right: '12px', bottom: '10px',
-                fontSize: '12px', color: '#999',
-              }}>
-                {scriptContent.length}/1000
-              </span>
-            </div>
-          </div>
+          <StrategyMakingPanel
+            scenario="流量运营"
+            onNewStrategy={() => setActivityDialogOpen(true)}
+            onConfirm={(data) => setConfirmedStrategy({ plan: data.plan, speech: data.speech })}
+          />
         </CollapsePanel>
 
         {/* ==================== 5. 已选小区列表 ==================== */}
@@ -1117,6 +1042,16 @@ export default function DispatchPage() {
         visible={portraitVisible}
         community={portraitCell}
         onClose={() => setPortraitVisible(false)}
+      />
+
+      {/* 新建策略活动弹窗 */}
+      <ActivityConfigDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        onSubmitted={() => {
+          setActivityDialogOpen(false);
+          setConfirmedStrategy({ plan: '新建策略活动', speech: '' });
+        }}
       />
     </div>
   );
