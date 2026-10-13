@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Info, Package, Users } from 'lucide-react';
+import { ArrowLeft, Copy, Info, Package, Plus, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ActivityType, ACTIVITY_TYPE_LIST } from '@/lib/strategy-activity';
+import { ActivityType } from '@/lib/strategy-activity';
+import { ScriptMarketingContent } from '@/components/strategy/ScriptMarketingEditor';
 
 const SCENE_LIBRARY: Record<ActivityType, string[]> = {
   IOP普通营销: ['提值', '保有', '全球通', '风险客户'],
@@ -22,29 +23,6 @@ const SCENE_LIBRARY: Record<ActivityType, string[]> = {
   多波次营销: ['提值', '保有', '全球通', '流量经营', '融合经营'],
   网格通: ['提值', '保有', '流量经营', '融合经营'],
 };
-
-// 网格通配置：网格选项 / 渠道 / 剧本示例
-const GRID_OPTIONS = [
-  '乌鲁木齐-天山区第一网格',
-  '乌鲁木齐-沙依巴克区第二网格',
-  '乌鲁木齐-新市区第三网格',
-  '昌吉-昌吉市核心网格',
-  '克拉玛依-克拉玛依区网格',
-];
-
-const GRID_CHANNELS = ['短信', '弹窗', '公众号', '视频彩铃'];
-
-const SCRIPT_EXAMPLES = [
-  { name: '中高端客户流量提升剧本', type: '多波次流程', scene: '中高端客户运营', actCount: 3, status: '草稿' },
-  { name: '离网高危客户关怀挽留剧本', type: '批量策划', scene: '离网维系', actCount: 2, status: '草稿' },
-  { name: '宽带到期续费提醒剧本', type: '多波次流程', scene: '家庭融合运营', actCount: 4, status: '草稿' },
-];
-
-const WAVE_EXAMPLES = [
-  { wave: '第 1 波', time: '活动第 1-3 天', channel: '短信 + 外呼', script: '权益告知', group: '高价值未升档客户' },
-  { wave: '第 2 波', time: '活动第 4-7 天', channel: '企业微信 + 掌厅', script: '限时升档礼包', group: '第 1 波未响应客户' },
-  { wave: '第 3 波', time: '活动第 8-10 天', channel: '外呼 + 公众号', script: '关怀回访', group: '待确认客户' },
-];
 
 const CHANNELS = ['短信', '外呼', '企业微信', '掌厅', '公众号'];
 const PRODUCTS = ['5G 升档包 30 元/月', '5G 畅享包 50 元/月', '宽带续费年包', '家庭融合套餐', '国际漫游流量包', '专属权益包'];
@@ -75,13 +53,38 @@ const SCRIPT_PREVIEW: Record<string, { text: string; highlight?: boolean }[]> = 
   ],
 };
 
+// 活动列表数据
+interface ActivityListItem {
+  id: string;
+  name: string;
+  type: 'IOP普通营销' | '剧本营销';
+  status: '草稿' | '审批中' | '执行中' | '已完成';
+  updatedAt: string;
+}
+
+const MOCK_ACTIVITY_LIST: ActivityListItem[] = [
+  { id: 'ACT-2026-0821-007', name: '乌鲁木齐 5G 套餐渗透率升档攻坚活动', type: 'IOP普通营销', status: '执行中', updatedAt: '2026-08-21 14:30' },
+  { id: 'ACT-2026-0826-003', name: '高价值客户离网挽留权益活动', type: 'IOP普通营销', status: '审批中', updatedAt: '2026-08-26 09:15' },
+  { id: 'ACT-2026-0820-004', name: '全球通携转预警多波次维系', type: '剧本营销', status: '执行中', updatedAt: '2026-08-20 16:40' },
+  { id: 'ACT-2026-0825-006', name: '中高端客户流量提升剧本', type: '剧本营销', status: '草稿', updatedAt: '2026-08-25 11:20' },
+];
+
+const ACTIVITY_STATUS_COLORS: Record<ActivityListItem['status'], 'default' | 'secondary' | 'outline'> = {
+  '草稿': 'secondary',
+  '审批中': 'outline',
+  '执行中': 'default',
+  '已完成': 'secondary',
+};
+
 function ActivityConfigInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const conclusion = searchParams.get('conclusion') || 'DG-20260828-001';
   const strategyId = searchParams.get('strategy') || 'STR-2026-0301';
 
-  const [type, setType] = useState<ActivityType>('多波次营销');
+  const [view, setView] = useState<'list' | 'create'>('list');
+  const [activities, setActivities] = useState<ActivityListItem[]>(MOCK_ACTIVITY_LIST);
+  const [type, setType] = useState<ActivityType>('IOP普通营销');
   const [scene, setScene] = useState('提值');
   const [activityName, setActivityName] = useState('乌鲁木齐 5G 套餐渗透率升档攻坚活动');
   const [targetGroup, setTargetGroup] = useState('乌鲁木齐中低端 5G 终端已具备未升档客户');
@@ -101,31 +104,17 @@ function ActivityConfigInner() {
   const [smsSent, setSmsSent] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  // 剧本营销 Tab 状态
-  const [scriptName, setScriptName] = useState('中高端客户流量提升剧本');
-  const [scriptType, setScriptType] = useState('多波次流程');
-  const [scriptActCount, setScriptActCount] = useState('3');
-  const [scriptSubmitted, setScriptSubmitted] = useState(false);
-
-  // 多波次营销 Tab 状态
-  const [waves, setWaves] = useState(WAVE_EXAMPLES);
-
-  // 网格通 Tab 状态
-  const [gridName, setGridName] = useState('乌鲁木齐流量升档网格通活动');
-  const [gridDesc, setGridDesc] = useState('面向网格内流量饱和度偏低的客户，推送流量升档权益与办理入口');
-  const [grids, setGrids] = useState<string[]>(['乌鲁木齐-天山区第一网格', '乌鲁木齐-新市区第三网格']);
-  const [gridStartDate, setGridStartDate] = useState('2026-09-01');
-  const [gridEndDate, setGridEndDate] = useState('2026-09-30');
-  const [gridChannels, setGridChannels] = useState<string[]>(['短信', '弹窗']);
-  const [gridTemplateTitle, setGridTemplateTitle] = useState('您的专属流量升档权益已到账');
-  const [gridTemplateContent, setGridTemplateContent] = useState('尊敬的客户，您当前流量已使用较多，现可享流量升档权益，点击办理入口立即办理，活动截止 2026-09-30。');
-  const [gridSubmitted, setGridSubmitted] = useState(false);
-
-  const toggleGrid = (value: string, checked: boolean) => {
-    setGrids((prev) => (checked ? [...prev, value] : prev.filter((item) => item !== value)));
+  // 新建活动 / 复制活动
+  const handleNewActivity = () => {
+    setType('IOP普通营销');
+    setActivityName('');
+    setView('create');
   };
-  const toggleGridChannel = (value: string) => {
-    setGridChannels((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+
+  const handleCopyActivity = (item: ActivityListItem) => {
+    setType(item.type);
+    setActivityName(`${item.name}（副本）`);
+    setView('create');
   };
 
   const activeScriptSegments = SCRIPT_PREVIEW[script] ?? [];
@@ -141,21 +130,69 @@ function ActivityConfigInner() {
         <div>
           <h1 className="text-xl font-semibold text-foreground">活动配置</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            统一配置 IOP 普通营销 / 剧本营销 / 多波次营销活动，生成带全局活动 ID 的活动实例并移交调度中心。
+            查看与复制当前已配置的活动，或新建 IOP 普通营销 / 剧本营销活动并移交调度中心。
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          <Info className="h-4 w-4" />
-          关联诊断：{conclusion} · 关联策略：{strategyId}
-        </div>
+        {view === 'list' ? (
+          <Button onClick={handleNewActivity}>
+            <Plus className="h-4 w-4 mr-1" /> 新建活动
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={() => setView('list')}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> 返回列表
+          </Button>
+        )}
       </div>
 
-      <Tabs value={type} onValueChange={(v) => { setType(v as ActivityType); setScene(SCENE_LIBRARY[v as ActivityType][0]); }}>
-        <TabsList>
-          {ACTIVITY_TYPE_LIST.map((t) => (
-            <TabsTrigger key={t} value={t}>{t}</TabsTrigger>
-          ))}
-        </TabsList>
+      {view === 'list' ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">当前配置的活动</CardTitle>
+            <CardDescription>支持复制活动，修改后提交为新活动</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>活动编号</TableHead>
+                  <TableHead>活动名称</TableHead>
+                  <TableHead>活动类型</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>更新时间</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activities.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono text-xs">{item.id}</TableCell>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell><Badge variant="outline">{item.type}</Badge></TableCell>
+                    <TableCell><Badge variant={ACTIVITY_STATUS_COLORS[item.status]}>{item.status}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{item.updatedAt}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={() => handleCopyActivity(item)}>
+                        <Copy className="h-3.5 w-3.5 mr-1" /> 复制活动
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <Info className="h-4 w-4" />
+            关联诊断：{conclusion} · 关联策略：{strategyId}
+          </div>
+
+          <Tabs value={type} onValueChange={(v) => { setType(v as ActivityType); setScene(SCENE_LIBRARY[v as ActivityType][0]); }}>
+            <TabsList>
+              <TabsTrigger value="IOP普通营销">IOP普通营销</TabsTrigger>
+              <TabsTrigger value="剧本营销">剧本营销</TabsTrigger>
+            </TabsList>
         <TabsContent value="IOP普通营销" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card>
@@ -413,176 +450,14 @@ function ActivityConfigInner() {
           </div>
         </TabsContent>
 
-        {/* 剧本营销 */}
-        <TabsContent value="剧本营销" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">剧本编排</CardTitle>
-              <CardDescription>配置剧本营销活动，支持多波次流程与批量策划</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>剧本名称</Label>
-                  <Input value={scriptName} onChange={(e) => setScriptName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>剧本类型</Label>
-                  <Select value={scriptType} onValueChange={setScriptType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="多波次流程">多波次流程</SelectItem>
-                      <SelectItem value="批量策划">批量策划</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>幕数</Label>
-                  <Input value={scriptActCount} onChange={(e) => setScriptActCount(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>已有剧本（迁入剧本营销）</Label>
-                <div className="rounded-md border border-border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-left text-muted-foreground">
-                        <th className="px-3 py-2 font-medium">剧本名称</th>
-                        <th className="px-3 py-2 font-medium">剧本类型</th>
-                        <th className="px-3 py-2 font-medium">业务场景</th>
-                        <th className="px-3 py-2 font-medium">幕数</th>
-                        <th className="px-3 py-2 font-medium">状态</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {SCRIPT_EXAMPLES.map((s) => (
-                        <tr key={s.name} className="border-b border-border last:border-0">
-                          <td className="px-3 py-2 text-foreground">{s.name}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{s.type}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{s.scene}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{s.actCount}</td>
-                          <td className="px-3 py-2"><Badge variant="outline">{s.status}</Badge></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                {scriptSubmitted ? (
-                  <span className="text-xs text-emerald-600">剧本「{scriptName}」已生成并进入活动配置</span>
-                ) : (
-                  <Button size="sm" onClick={() => setScriptSubmitted(true)}>生成剧本</Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* 剧本营销：迁入「新建剧本营销」编辑器 */}
+        <TabsContent value="剧本营销" className="mt-4">
+          <ScriptMarketingContent embedded />
         </TabsContent>
 
-        {/* 多波次营销 */}
-        <TabsContent value="多波次营销" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">波次计划</CardTitle>
-              <CardDescription>配置多波次营销节奏与触点排布，分波次触达不同客群</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-md border border-border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">波次</th>
-                      <th className="px-3 py-2 font-medium">时间窗口</th>
-                      <th className="px-3 py-2 font-medium">触达渠道</th>
-                      <th className="px-3 py-2 font-medium">话术</th>
-                      <th className="px-3 py-2 font-medium">目标客群</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {waves.map((w) => (
-                      <tr key={w.wave} className="border-b border-border last:border-0">
-                        <td className="px-3 py-2 font-medium text-foreground">{w.wave}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{w.time}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{w.channel}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{w.script}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{w.group}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
-                多波次营销按「第 1 波 → 未响应 → 第 2 波 → 待确认 → 第 3 波」节奏推进，各波次客群随上波响应结果动态圈定。
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 网格通 */}
-        <TabsContent value="网格通" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">网格通活动配置</CardTitle>
-              <CardDescription>面向网格一线配置网格通活动：设定网格范围、周期、渠道与内容模板，提交后自动下发</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>活动名称</Label>
-                  <Input value={gridName} onChange={(e) => setGridName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>活动说明</Label>
-                  <Input value={gridDesc} onChange={(e) => setGridDesc(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>网格范围（已选 {grids.length} 个）</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GRID_OPTIONS.map((g) => (
-                    <label key={g} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm ${grids.includes(g) ? 'border-primary/40 bg-primary/5' : 'border-border hover:bg-muted/40'}`}>
-                      <Checkbox checked={grids.includes(g)} onCheckedChange={(checked) => toggleGrid(g, checked === true)} />
-                      <span className="text-foreground">{g}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>开始时间</Label>
-                  <Input type="date" value={gridStartDate} onChange={(e) => setGridStartDate(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>结束时间</Label>
-                  <Input type="date" value={gridEndDate} onChange={(e) => setGridEndDate(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>触达渠道</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GRID_CHANNELS.map((c) => (
-                    <Badge key={c} variant={gridChannels.includes(c) ? 'default' : 'outline'} className="cursor-pointer" onClick={() => toggleGridChannel(c)}>
-                      {c}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>内容模板</Label>
-                <Input value={gridTemplateTitle} onChange={(e) => setGridTemplateTitle(e.target.value)} />
-                <Textarea rows={3} value={gridTemplateContent} onChange={(e) => setGridTemplateContent(e.target.value)} />
-              </div>
-              <div className="flex justify-end">
-                {gridSubmitted ? (
-                  <span className="text-xs text-emerald-600">网格通活动「{gridName}」已提交审批</span>
-                ) : (
-                  <Button size="sm" onClick={() => setGridSubmitted(true)}>提交网格通审批</Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
