@@ -205,7 +205,7 @@ const menuItems: MenuItem[] = [
           { name: '策略总览', path: '/portal/capability/strategy/overview' },
           { name: '剧本营销', path: '/portal/capability/strategy/script-marketing', hidden: true },
           { name: '策略沉淀', path: '/workspace/strategy-repository/effect' },
-          { name: '跨中心协作', path: '/workspace/strategy-collab/insight' },
+          { name: '跨中心协作', path: '/workspace/strategy-collab/insight', hidden: true },
           { name: '接收诊断', path: '/workspace/strategy/receive-diagnosis' },
           { name: '活动配置', path: '/workspace/strategy/activity-config' },
           { name: '策略审批', path: '/workspace/strategy/approval' },

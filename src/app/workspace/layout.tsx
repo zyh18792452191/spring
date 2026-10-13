@@ -159,15 +159,16 @@ const navigation = [
           { name: '模板管理', href: '/workspace/strategy-repository/template', icon: FileText },
         ]
       },
-      {
-        name: '跨中心协作',
-        children: [
-          { name: '与洞察中心协作', href: '/workspace/strategy-collab/insight', icon: BarChart3 },
-          { name: '与调度中心协作', href: '/workspace/strategy-collab/dispatch', icon: Send },
-          { name: '与评估中心协作', href: '/workspace/strategy-collab/evaluation', icon: ClipboardCheck },
-          { name: '与知识中心协作', href: '/workspace/strategy-collab/knowledge', icon: BookOpen },
-        ]
-      },
+      // 跨中心协作菜单已隐藏（需求：隐藏跨中心协作菜单）
+      // {
+      //   name: '跨中心协作',
+      //   children: [
+      //     { name: '与洞察中心协作', href: '/workspace/strategy-collab/insight', icon: BarChart3 },
+      //     { name: '与调度中心协作', href: '/workspace/strategy-collab/dispatch', icon: Send },
+      //     { name: '与评估中心协作', href: '/workspace/strategy-collab/evaluation', icon: ClipboardCheck },
+      //     { name: '与知识中心协作', href: '/workspace/strategy-collab/knowledge', icon: BookOpen },
+      //   ]
+      // },
       // 网格通活动配置菜单已隐藏（需求：隐藏剧本营销和网格通活动配置菜单）
       // { name: '网格通活动配置', href: '/workspace/strategy/grid-config', icon: Smartphone },
     ]
