@@ -827,6 +827,20 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
           ))}
         </div>
 
+            {/* 页面标题（当前分析指标） */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">策略制定</h1>
+              <p className="text-sm text-gray-600">当前分析指标：{indicatorName}</p>
+              <div className="mt-3 space-y-1 text-sm text-gray-600">
+                <p><span className="text-gray-500">指标ID：</span><span className="font-medium text-gray-800">{indicatorMeta.id}</span></p>
+                <p><span className="text-gray-500">指标描述：</span>{indicatorMeta.desc}</p>
+                <p><span className="text-gray-500">异常原因：</span>{indicatorMeta.reason || '—'}</p>
+                {conclusion && (
+                  <p><span className="text-gray-500">关联诊断结论：</span><span className="font-medium text-gray-800">{conclusion}</span></p>
+                )}
+              </div>
+            </div>
+
             {/* 策略制定（新增策略 + 话术，与策略调度弹窗一致） */}
             <div className="mb-6">
               <StrategyMakingPanel
@@ -1144,20 +1158,6 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                   )}
                 </Card>
               ))}
-            </div>
-
-            {/* 页面标题（当前分析指标） */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">策略制定</h1>
-              <p className="text-sm text-gray-600">当前分析指标：{indicatorName}</p>
-              <div className="mt-3 space-y-1 text-sm text-gray-600">
-                <p><span className="text-gray-500">指标ID：</span><span className="font-medium text-gray-800">{indicatorMeta.id}</span></p>
-                <p><span className="text-gray-500">指标描述：</span>{indicatorMeta.desc}</p>
-                <p><span className="text-gray-500">异常原因：</span>{indicatorMeta.reason || '—'}</p>
-                {conclusion && (
-                  <p><span className="text-gray-500">关联诊断结论：</span><span className="font-medium text-gray-800">{conclusion}</span></p>
-                )}
-              </div>
             </div>
 
             {/* 底部操作栏 */}
