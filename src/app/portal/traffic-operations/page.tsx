@@ -2851,6 +2851,7 @@ function IndicatorTreeContent({ indicatorName, selectedMonth, currentTab }: { in
               from="churn-retention"
               businessScenario="流量运营"
               onStrategyDispatch={isTrafficIncrease ? () => setStrategyDispatchOpen(true) : undefined}
+              enableStrategyMaking={isTrafficIncrease}
             />
           </div>
 

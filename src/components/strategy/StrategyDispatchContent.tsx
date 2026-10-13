@@ -117,11 +117,18 @@ const APPROVER_LIST: Array<{
 
 // ==================== 主组件 ====================
 
+export interface StrategyDispatchSubmitPayload {
+  orderTitle: string;
+  businessScenario: string;
+  dispatchSystem: 'IOP' | '网格通' | '剧本营销';
+  description: string;
+}
+
 interface StrategyDispatchContentProps {
   indicatorName?: string;  // 默认 '全球通客户规模保有率'
   from?: string;           // 默认 'mid-high-customer-operations'
   onBack?: () => void;     // 提供时"返回"和"上一步"按钮调用它，否则保持 router.back()
-  onSubmitSuccess?: () => void; // 提供时提交成功（handleSubmit 校验通过后）调用它，否则保持 router.back()
+  onSubmitSuccess?: (payload: StrategyDispatchSubmitPayload) => void; // 提供时提交成功（handleSubmit 校验通过后）调用它，否则保持 router.back()
   embed?: boolean;         // 嵌入弹窗模式：背景透明（由外层容器控制），不加 min-h-screen
 }
 
@@ -292,7 +299,12 @@ function StrategyDispatchContent({ indicatorName: indicatorNameProp, from: fromP
     }
     alert('提交审核成功！工单将进入审批流程。');
     if (onSubmitSuccess) {
-      onSubmitSuccess();
+      onSubmitSuccess({
+        orderTitle: formData.orderTitle,
+        businessScenario: formData.businessScenario,
+        dispatchSystem: formData.dispatchSystem,
+        description: formData.description,
+      });
       return;
     }
     router.back();

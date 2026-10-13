@@ -19,6 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import StrategyMakingPanel from './strategy/StrategyMakingPanel';
+import ActivityConfigDialog from './strategy/ActivityConfigDialog';
+import { recordActivityInstance } from '@/lib/activity-instances';
 
 // ==================== 数据定义 ====================
 
@@ -122,6 +125,7 @@ interface CustomerGroupDispatchDialogProps {
   indicatorName?: string;
   indicatorValue?: string;
   businessScenario?: string;
+  enableStrategyMaking?: boolean;
 }
 
 // ==================== 组件 ====================
@@ -132,6 +136,7 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
   indicatorName = '当月全球通异网主卡率',
   indicatorValue = '6.99%',
   businessScenario = '公众市场/客户运营/全球通',
+  enableStrategyMaking = false,
 }) => {
   // 步骤控制
   const [step, setStep] = useState(1);
@@ -163,6 +168,13 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
   // 弹窗控制
   const [showApproverDialog, setShowApproverDialog] = useState(false);
   const [showIopHandlerDialog, setShowIopHandlerDialog] = useState(false);
+
+  // 策略制定确认结果（触客策略策略化） + 新建策略活动弹窗
+  const [confirmedStrategy, setConfirmedStrategy] = useState<{ plan: string; speech: string } | null>(null);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+
+  // 运营场景简名（活动实例记录用）
+  const scenarioName = businessScenario.split('/').pop() || businessScenario;
 
   // 客群规模计算
   const calculatedScale = useMemo(() => {
@@ -213,6 +225,16 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
 
   // 提交
   const handleDispatch = () => {
+    // 提交后除生成调度工单外，同步生成活动实例，可在活动配置中查看
+    recordActivityInstance({
+      name: orderTitle,
+      type: dispatchSystem === '剧本营销' ? '剧本营销' : 'IOP普通营销',
+      scenario: scenarioName,
+      source: '客群调度',
+      dispatchSystem,
+      strategyPlan: confirmedStrategy?.plan,
+      speech: confirmedStrategy?.speech,
+    });
     alert('客群调度工单已提交！');
     handleClose();
   };
@@ -238,6 +260,7 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
   // ==================== 渲染 ====================
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
         disableMaxWidth
@@ -453,19 +476,31 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
                 <label className="text-sm font-medium text-gray-700">
                   <span className="text-red-500 mr-0.5">*</span>触客策略
                 </label>
-                <Textarea
-                  value={engagementStrategy}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 500) {
-                      setEngagementStrategy(e.target.value);
+                {enableStrategyMaking ? (
+                  <StrategyMakingPanel
+                    scenario={scenarioName}
+                    onNewStrategy={() => setActivityDialogOpen(true)}
+                    onConfirm={(data) =>
+                      setConfirmedStrategy({ plan: data.plan, speech: data.speech })
                     }
-                  }}
-                  placeholder="请输入"
-                  rows={3}
-                />
-                <div className="text-right text-xs text-gray-400">
-                  {engagementStrategy.length} / 500
-                </div>
+                  />
+                ) : (
+                  <>
+                    <Textarea
+                      value={engagementStrategy}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 500) {
+                          setEngagementStrategy(e.target.value);
+                        }
+                      }}
+                      placeholder="请输入"
+                      rows={3}
+                    />
+                    <div className="text-right text-xs text-gray-400">
+                      {engagementStrategy.length} / 500
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* 圈选标签（只读） */}
@@ -913,6 +948,15 @@ const CustomerGroupDispatchDialog: React.FC<CustomerGroupDispatchDialogProps> = 
         )}
       </DialogContent>
     </Dialog>
+    <ActivityConfigDialog
+      open={activityDialogOpen}
+      onOpenChange={setActivityDialogOpen}
+      onSubmitted={() => {
+        setActivityDialogOpen(false);
+        setConfirmedStrategy({ plan: '新建策略活动', speech: '' });
+      }}
+    />
+    </>
   );
 };
 

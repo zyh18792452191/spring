@@ -29,6 +29,7 @@ interface AnalysisPanelProps {
   headerRight?: ReactNode; // 标题区右上角自定义内容（如时间/地区筛选）
   onStrategyDispatch?: () => void; // 点击"策略调度"按钮时触发（提供时不再跳转独立页面）
   hideHeaderActions?: boolean; // 隐藏标题区右上角全部控件（时间/区域筛选与调度按钮，用于控件上移至弹窗层）
+  enableStrategyMaking?: boolean; // 客群调度触客策略是否策略化（仅当月流量增幅场景开启）
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
@@ -49,6 +50,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   headerRight,
   onStrategyDispatch,
   hideHeaderActions = false,
+  enableStrategyMaking = false,
 }) => {
   const mounted = useMounted();
   const router = useRouter();
@@ -660,6 +662,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         indicatorName={parentIndicatorName}
         indicatorValue={String(selectedNode?.value || '')}
         businessScenario={businessScenario}
+        enableStrategyMaking={enableStrategyMaking}
       />
 
       {/* 指标调度弹窗 */}

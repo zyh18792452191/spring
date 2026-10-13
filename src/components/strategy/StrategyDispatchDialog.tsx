@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import StrategyDispatchContent from './StrategyDispatchContent';
+import StrategyDispatchContent, { type StrategyDispatchSubmitPayload } from './StrategyDispatchContent';
 import StrategyMakingPanel from './StrategyMakingPanel';
 import ActivityConfigDialog from './ActivityConfigDialog';
+import { recordActivityInstance } from '@/lib/activity-instances';
 
 interface StrategyDispatchDialogProps {
   open: boolean;
@@ -22,7 +23,21 @@ export default function StrategyDispatchDialog({
   from = 'traffic-operations',
 }: StrategyDispatchDialogProps) {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
-  const [confirmedPlan, setConfirmedPlan] = useState<string | null>(null);
+  const [confirmedStrategy, setConfirmedStrategy] = useState<{ plan: string; speech: string } | null>(null);
+
+  const handleSubmitSuccess = (payload: StrategyDispatchSubmitPayload) => {
+    // 提交后除生成调度工单外，同步生成活动实例，可在活动配置中查看
+    recordActivityInstance({
+      name: payload.orderTitle,
+      type: payload.dispatchSystem === '剧本营销' ? '剧本营销' : 'IOP普通营销',
+      scenario,
+      source: '策略调度',
+      dispatchSystem: payload.dispatchSystem,
+      strategyPlan: confirmedStrategy?.plan,
+      speech: confirmedStrategy?.speech,
+    });
+    onOpenChange(false);
+  };
 
   return (
     <>
@@ -38,12 +53,12 @@ export default function StrategyDispatchDialog({
             <StrategyMakingPanel
               scenario={scenario}
               onNewStrategy={() => setActivityDialogOpen(true)}
-              onConfirm={(data) => setConfirmedPlan(data.plan)}
+              onConfirm={(data) => setConfirmedStrategy({ plan: data.plan, speech: data.speech })}
             />
 
-            {confirmedPlan && (
+            {confirmedStrategy && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                已采用策略：{confirmedPlan}
+                已采用策略：{confirmedStrategy.plan}
               </div>
             )}
 
@@ -52,7 +67,7 @@ export default function StrategyDispatchDialog({
               indicatorName={indicatorName}
               from={from}
               embed
-              onSubmitSuccess={() => onOpenChange(false)}
+              onSubmitSuccess={handleSubmitSuccess}
             />
           </div>
         </DialogContent>
@@ -64,7 +79,7 @@ export default function StrategyDispatchDialog({
         onOpenChange={setActivityDialogOpen}
         onSubmitted={() => {
           setActivityDialogOpen(false);
-          setConfirmedPlan('新建策略活动');
+          setConfirmedStrategy({ plan: '新建策略活动', speech: '' });
         }}
       />
     </>
