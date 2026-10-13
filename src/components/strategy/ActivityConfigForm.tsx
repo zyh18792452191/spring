@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityType } from '@/lib/strategy-activity';
@@ -28,32 +27,7 @@ const SCENE_LIBRARY: Record<ActivityType, string[]> = {
 
 const CHANNELS = ['短信', '外呼', '企业微信', '掌厅', '公众号'];
 const PRODUCTS = ['5G 升档包 30 元/月', '5G 畅享包 50 元/月', '宽带续费年包', '家庭融合套餐', '国际漫游流量包', '专属权益包'];
-const METRICS = ['5G套餐渗透率', '宽带续费率', '离网率', '融合套餐渗透率', 'ARPU', '办理量', '留存率'];
-const OBSERVATION_PERIODS = ['活动结束后 15 天', '活动结束后 30 天', '活动结束后 45 天', '活动结束后 60 天'];
 const EXCLUDE_TAGS = ['当月已圈选客户', '近1月办理后返销/取消业务客户', '已投诉黑名单客户', '在途工单客户'];
-
-// 话术分段预览（分段 + 高亮）
-const SCRIPT_PREVIEW: Record<string, { text: string; highlight?: boolean }[]> = {
-  权益告知话术: [
-    { text: '【尊敬的用户】' },
-    { text: '您当前套餐可免费升级至 5G 畅享，', highlight: true },
-    { text: '升级后每月多 30GB 流量。' },
-    { text: '回复"1"立即办理，', highlight: true },
-    { text: '活动限时 3 天。' },
-  ],
-  限时升档礼包话术: [
-    { text: '【限时福利】' },
-    { text: '本月升档 5G 套餐，', highlight: true },
-    { text: '赠首月流量翻倍 + 20 元话费。' },
-    { text: '点此立即办理 >>', highlight: true },
-  ],
-  续费提醒话术: [
-    { text: '【续费提醒】' },
-    { text: '您的宽带即将到期，', highlight: true },
-    { text: '现在续费立减 60 元。' },
-    { text: '回复"续费"办理。' },
-  ],
-};
 
 // 活动列表数据
 interface ActivityListItem {
@@ -116,13 +90,6 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted }: Activ
   const [products, setProducts] = useState<string[]>(['5G 升档包 30 元/月']);
   const [priority, setPriority] = useState('高');
   const [deadline, setDeadline] = useState('2026-09-15');
-  const [evalEnabled, setEvalEnabled] = useState(true);
-  const [observationPeriod, setObservationPeriod] = useState('活动结束后 30 天');
-  const [metrics, setMetrics] = useState<string[]>(['5G套餐渗透率', '办理量', 'ARPU']);
-  const [targetValue, setTargetValue] = useState('渗透率 ≥ 70%');
-  const [compareIntervention, setCompareIntervention] = useState(true);
-  const [feedbackOptions, setFeedbackOptions] = useState<string[]>(['不办理原因', '数据异常问题']);
-  const [smsSent, setSmsSent] = useState(false);
   const [generated, setGenerated] = useState(false);
 
   // 新建活动 / 复制活动
@@ -137,8 +104,6 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted }: Activ
     setActivityName(`${item.name}（副本）`);
     setView('create');
   };
-
-  const activeScriptSegments = SCRIPT_PREVIEW[script] ?? [];
 
   const currentSceneList = SCENE_LIBRARY[type];
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
@@ -351,109 +316,6 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted }: Activ
                 </Card>
               </div>
 
-              {/* 后评估配置 */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">后评估配置（效果评估体系）</CardTitle>
-                  <CardDescription>自定义观察周期与业务指标，支持干预/未干预客群对比</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Switch checked={evalEnabled} onCheckedChange={setEvalEnabled} />
-                    <Label>开启后评估</Label>
-                  </div>
-                  {evalEnabled && (
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label>观察周期（自定义）</Label>
-                        <Select value={observationPeriod} onValueChange={setObservationPeriod}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {OBSERVATION_PERIODS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>业务指标（自定义）</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {METRICS.map((m) => (
-                            <Badge key={m} variant={metrics.includes(m) ? 'default' : 'outline'} className="cursor-pointer" onClick={() => toggle(metrics, setMetrics, m)}>
-                              {m}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>目标值</Label>
-                        <Input value={targetValue} onChange={(e) => setTargetValue(e.target.value)} />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Checkbox checked={compareIntervention} onCheckedChange={(v) => setCompareIntervention(v === true)} />
-                    <Label className="text-sm">开启干预 / 未干预客群对比</Label>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 触点反馈与效果口径 */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">触点反馈与效果口径</CardTitle>
-                  <CardDescription>承接 IOP 触点活动配置优化建议</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>触点反馈结构化选项</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {['不办理原因', '数据异常问题'].map((o) => (
-                        <Badge key={o} variant={feedbackOptions.includes(o) ? 'default' : 'outline'} className="cursor-pointer" onClick={() => toggle(feedbackOptions, setFeedbackOptions, o)}>
-                          {o}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>效果统计口径说明</Label>
-                    <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
-                      统计口径统一为「按客群 / 按接触 / 按成功办理渠道」三类，办理成功以成功办理渠道数据为准；报表页将注明口径说明。
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>话术分段预览</Label>
-                    <div className="rounded-md border border-border bg-card p-3 text-sm leading-relaxed">
-                      {activeScriptSegments.map((seg, i) => (
-                        <span key={i} className={seg.highlight ? 'font-semibold text-primary' : 'text-foreground'}>
-                          {seg.text}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 冲突约束校验 */}
-              <Card className="border-primary/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">冲突约束校验</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">通过</span>
-                    <span className="text-muted-foreground">频次控制：同客群 7 日内触达 ≤ 3 次，当前 2 次</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">通过</span>
-                    <span className="text-muted-foreground">防打扰：避开 22:00-08:00 触达时段</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">提示</span>
-                    <span className="text-muted-foreground">优先级抢占：本活动优先级「高」，将覆盖同客群低优先级在途活动</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">统一要素库：产品 / 话术 / 渠道均由要素库统一管理，口径唯一，禁止自建冗余要素。</div>
-                </CardContent>
-              </Card>
-
               {/* 底部操作栏 */}
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
                 <div className="text-xs text-muted-foreground">
@@ -461,10 +323,6 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted }: Activ
                   <Button variant="link" size="sm" className="h-auto p-0 px-1 text-primary">查看修改日志</Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSmsSent(true)}>
-                    短信测试
-                  </Button>
-                  {smsSent && <span className="text-xs text-emerald-600">已发送测试短信至默认配置人账号</span>}
                   {generated ? (
                     <>
                       <span className="text-xs text-emerald-600">活动实例 ACT-2026-0828-001 已生成</span>
