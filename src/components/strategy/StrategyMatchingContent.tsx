@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import StrategyMakingPanel from './StrategyMakingPanel';
+import ActivityConfigDialog from './ActivityConfigDialog';
+import StrategyDispatchDialog from './StrategyDispatchDialog';
 
 // 地市列表
 const ALL_PROVINCES = [
@@ -171,11 +174,12 @@ interface StrategyMatchingContentProps {
   from?: string;               // 默认 'churn-retention'
   tab?: string;                // 默认 'overview'
   template?: string;           // 从模板/最佳实践带入定策的模板ID
+  conclusion?: string;         // 诊断结论编号（来自接收诊断跳转）
   onReturn?: () => void;       // 提供时"返回"按钮调用它，否则保持原 router.push 跳转行为
   onNext?: (info: { indicatorName: string; indicatorId: string; from: string }) => void; // 提供时"下一步"调用它，否则保持原跳转
 }
 
-function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId = '', from = 'churn-retention', tab = 'overview', template, onReturn, onNext }: StrategyMatchingContentProps) {
+function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId = '', from = 'churn-retention', tab = 'overview', template, conclusion, onReturn, onNext }: StrategyMatchingContentProps) {
   const router = useRouter();
   const indicatorName = indicatorNameProp || '一降到底规模';
   const selectedIndicatorId = indicatorId;
@@ -294,6 +298,10 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     searchKeyword: '',
   });
 
+  // 策略调度弹窗 + 新建活动弹窗
+  const [dispatchDialogOpen, setDispatchDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+
   const handleReturn = () => {
     if (onReturn) {
       onReturn();
@@ -317,7 +325,8 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
       onNext({ indicatorName, indicatorId: selectedIndicatorId, from });
       return;
     }
-    router.push(`/workspace/strategy/activity-config?conclusion=${encodeURIComponent(indicatorName)}&strategy=STR-2026-0301&from=${from}`);
+    // 去调度：打开策略调度弹窗，复用策略调度工单流程
+    setDispatchDialogOpen(true);
   };
 
   // 删除根因指标卡片
@@ -826,6 +835,9 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                 <p><span className="text-gray-500">指标ID：</span><span className="font-medium text-gray-800">{indicatorMeta.id}</span></p>
                 <p><span className="text-gray-500">指标描述：</span>{indicatorMeta.desc}</p>
                 <p><span className="text-gray-500">异常原因：</span>{indicatorMeta.reason || '—'}</p>
+                {conclusion && (
+                  <p><span className="text-gray-500">关联诊断结论：</span><span className="font-medium text-gray-800">{conclusion}</span></p>
+                )}
               </div>
             </div>
 
@@ -1237,6 +1249,14 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
               ))}
             </div>
 
+            {/* 策略制定（新增策略 + 话术，与策略调度弹窗一致） */}
+            <div className="mb-6">
+              <StrategyMakingPanel
+                scenario="流量运营"
+                onNewStrategy={() => setActivityDialogOpen(true)}
+              />
+            </div>
+
             {/* 底部操作栏 */}
             <div className="flex items-center justify-end gap-3">
               <Button variant="outline" onClick={handleReturn} className="border-gray-300">
@@ -1247,7 +1267,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                 onClick={handleNextStep}
                 className="bg-[#3B82F6] hover:bg-[#2563EB]"
               >
-                下一步
+                去调度
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -1495,6 +1515,23 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 策略调度弹窗（复用策略调度工单流程，策略已在页面完成） */}
+      <StrategyDispatchDialog
+        open={dispatchDialogOpen}
+        onOpenChange={setDispatchDialogOpen}
+        indicatorName={indicatorName}
+        scenario="流量运营"
+        from={from}
+        showStrategyMaking={false}
+      />
+
+      {/* 新建策略活动弹窗（复用活动配置的新建活动视图） */}
+      <ActivityConfigDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        onSubmitted={() => setActivityDialogOpen(false)}
+      />
     </>
   );
 }

@@ -8,11 +8,12 @@ function StrategyMatchingPageInner() {
   const searchParams = useSearchParams();
   return (
     <StrategyMatchingContent
-      indicatorName={searchParams.get('indicatorName') || undefined}
+      indicatorName={searchParams.get('indicatorName') || searchParams.get('indicator') || undefined}
       indicatorId={searchParams.get('indicatorId') || undefined}
       from={searchParams.get('from') || undefined}
       tab={searchParams.get('tab') || undefined}
       template={searchParams.get('template') || undefined}
+      conclusion={searchParams.get('conclusion') || undefined}
     />
   );
 }

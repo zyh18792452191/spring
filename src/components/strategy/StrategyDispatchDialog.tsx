@@ -13,6 +13,7 @@ interface StrategyDispatchDialogProps {
   indicatorName: string;
   scenario?: string;
   from?: string;
+  showStrategyMaking?: boolean; // 页面已完成策略制定时传 false，弹窗内仅展示调度派发表单
 }
 
 export default function StrategyDispatchDialog({
@@ -21,6 +22,7 @@ export default function StrategyDispatchDialog({
   indicatorName,
   scenario = '流量运营',
   from = 'traffic-operations',
+  showStrategyMaking = true,
 }: StrategyDispatchDialogProps) {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [confirmedStrategy, setConfirmedStrategy] = useState<{ plan: string; speech: string } | null>(null);
@@ -50,16 +52,20 @@ export default function StrategyDispatchDialog({
 
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
             {/* 策略制定环节（调度流程中的一个环节，不跳转页面） */}
-            <StrategyMakingPanel
-              scenario={scenario}
-              onNewStrategy={() => setActivityDialogOpen(true)}
-              onConfirm={(data) => setConfirmedStrategy({ plan: data.plan, speech: data.speech })}
-            />
+            {showStrategyMaking && (
+              <>
+                <StrategyMakingPanel
+                  scenario={scenario}
+                  onNewStrategy={() => setActivityDialogOpen(true)}
+                  onConfirm={(data) => setConfirmedStrategy({ plan: data.plan, speech: data.speech })}
+                />
 
-            {confirmedStrategy && (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                已采用策略：{confirmedStrategy.plan}
-              </div>
+                {confirmedStrategy && (
+                  <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    已采用策略：{confirmedStrategy.plan}
+                  </div>
+                )}
+              </>
             )}
 
             {/* 提交调度流程（保持原有调度派发流程不变） */}
