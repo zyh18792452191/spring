@@ -617,6 +617,12 @@ const getWorkOrderDataByType = (type: WorkOrderType, paramId: string, paramTitle
         { name: '当月流量', value: '1-5GB', ratio: '29.94%' },
       ],
     },
+    // 策略列表（触客策略，与策略调度结构一致）
+    strategyList: [
+      { id: 1, indicator: '当月全量离网客户数', riskGroup: '异网主卡客户', tags: '高流量、低话费', strategy: '对异网主卡有流量客群，基于前期客户消费值，推进对应套餐或包，并进行折扣迎回', dispatchRegion: '昌吉、喀什、吐鲁番' },
+      { id: 2, indicator: '欠费销号离网率', riskGroup: '转低消保号客户', tags: '低消保号', strategy: '针对转低消保号客户，提供保号挽留方案，降低欠费销号风险', dispatchRegion: '昌吉、哈密、博州' },
+      { id: 3, indicator: '当月全量离网客户数', riskGroup: '异网宽带用户', tags: '异网宽带', strategy: '对异网宽带用户，推广融合套餐，提供家庭宽带、IPTV等增值服务', dispatchRegion: '吐鲁番、博州' },
+    ],
     // 调度指标列表（含账期、环比、同比、位置路径）
     dispatchIndicators: [
       { 
@@ -768,6 +774,12 @@ const getWorkOrderDataByType = (type: WorkOrderType, paramId: string, paramTitle
         communityCount: '5个',
         targetCustomerCount: '2,750户',
       },
+      // 策略列表（触客策略，与策略调度结构一致）
+      strategyList: [
+        { id: 1, indicator: '宽带渗透率', riskGroup: '流量低饱和小区客户', tags: '低饱和', strategy: '针对流量低饱和小区，推送大流量套餐升级，突出超套资费差异引导升级', dispatchRegion: '天山区' },
+        { id: 2, indicator: '宽带渗透率', riskGroup: '流量超套高发小区客户', tags: '超套高发', strategy: '对流量超套高发小区客户，优先推荐大流量套餐+流量加油包组合', dispatchRegion: '天山区' },
+        { id: 3, indicator: '宽带渗透率', riskGroup: '异网高风险小区客户', tags: '异网风险', strategy: '对异网高风险小区客户，侧重移动网络优势和服务体验，促成携转', dispatchRegion: '天山区' },
+      ],
       // 调度配置
       dispatchInfo: {
         channel: '网格通',
@@ -788,6 +800,26 @@ const getWorkOrderDataByType = (type: WorkOrderType, paramId: string, paramTitle
           { type: '高价值客户', count: 1200, color: '#ef4444' },
           { type: '中价值客户', count: 1050, color: '#f97316' },
           { type: '低价值客户', count: 500, color: '#a3a3a3' },
+        ],
+      },
+      // 关联活动信息（网格通攻坚活动，字段沿用 iopExecution 以复用渲染）
+      iopExecution: {
+        activityId: 'WGT-ACT-20251215001',
+        activityName: '天山区流量攻坚活动',
+        activityStatus: '执行中',
+        activityCreateTime: '2025-12-15 09:10:00',
+        targetCount: 2750,
+        reachedCount: 1800,
+        successReachedCount: 1050,
+        convertedCount: 420,
+        channelDistribution: [
+          { channel: '外呼', reachedCount: 1200, convertedCount: 260, conversionRate: '21.7%' },
+          { channel: '短信', reachedCount: 480, convertedCount: 90, conversionRate: '18.8%' },
+          { channel: '线下走访', reachedCount: 120, convertedCount: 70, conversionRate: '58.3%' },
+        ],
+        strategyDetails: [
+          { strategyId: 'RAS-STR-001', strategyName: '流量低饱和小区套餐升档', channel: '外呼+短信', reachedCount: 900, convertedCount: 200, conversionRate: '22.2%' },
+          { strategyId: 'RAS-STR-002', strategyName: '超套高发小区加油包推荐', channel: '外呼+线下', reachedCount: 600, convertedCount: 140, conversionRate: '23.3%' },
         ],
       },
       // 执行进度（统一字段名）
@@ -1932,6 +1964,35 @@ function TicketDetailContent() {
             </div>
           </div>
           
+          {/* 策略列表 */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">策略列表</h3>
+          <div className="overflow-x-auto mb-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 text-center">序号</TableHead>
+                  <TableHead className="w-32">关联指标</TableHead>
+                  <TableHead className="w-28">风险客群</TableHead>
+                  <TableHead>策略描述</TableHead>
+                  <TableHead className="w-28">派发区域</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ticketData as any).strategyList?.map((strategy: any) => (
+                  <TableRow key={strategy.id}>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="text-xs">{strategy.id}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{strategy.indicator}</TableCell>
+                    <TableCell>{strategy.riskGroup}</TableCell>
+                    <TableCell className="max-w-xs">{strategy.strategy}</TableCell>
+                    <TableCell>{strategy.dispatchRegion}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
           {/* 调度指标列表 */}
           <h3 className="text-sm font-semibold text-gray-700 mb-3">调度指标列表</h3>
           <div className="overflow-x-auto">
@@ -2040,6 +2101,39 @@ function TicketDetailContent() {
             <>
               <h3 className="text-sm font-semibold text-gray-700 mb-3">调度配置</h3>
               <OpportunityDispatchConfig data={(ticketData as Record<string, any>)?.dispatchInfo || (ticketData as Record<string, any>)?.dispatchConfig} dispatchSystem="wanggetong" ticketType={paramType as 'customer-opportunity-dispatch' | 'group-opportunity-dispatch' | 'region-assault' | 'strategy' | 'customer-group'} evaluationIndicator={(ticketData as any).evaluationIndicator} />
+            </>
+          )}
+
+          {/* 策略列表 - 仅区域攻坚调度显示 */}
+          {paramType === 'region-assault' && (
+            <>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">策略列表</h3>
+              <div className="overflow-x-auto mb-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 text-center">序号</TableHead>
+                      <TableHead className="w-32">关联指标</TableHead>
+                      <TableHead className="w-28">风险客群</TableHead>
+                      <TableHead>策略描述</TableHead>
+                      <TableHead className="w-28">派发区域</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(ticketData as any).strategyList?.map((strategy: any) => (
+                      <TableRow key={strategy.id}>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="text-xs">{strategy.id}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{strategy.indicator}</TableCell>
+                        <TableCell>{strategy.riskGroup}</TableCell>
+                        <TableCell className="max-w-xs">{strategy.strategy}</TableCell>
+                        <TableCell>{strategy.dispatchRegion}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </>
           )}
 
@@ -2254,6 +2348,98 @@ function TicketDetailContent() {
             }))}
             onGoToSubTicketDetail={goToSubTicketDetail}
           />
+        </CollapsibleCard>
+      )}
+
+      {/* 关联活动信息 - 客群调度/策略调度/区域攻坚调度显示 */}
+      {(paramType === 'strategy' || paramType === 'customer-group' || paramType === 'region-assault') && (ticketData as any).iopExecution && (
+        <CollapsibleCard title="关联活动信息" icon={<FileText className="h-5 w-5 text-blue-600" />} moduleKey="related-activity" collapsed={collapsedModules.has('related-activity')} onToggle={toggleModule}>
+          {/* 活动基本信息 */}
+          <div className="grid grid-cols-4 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">活动ID</p>
+              <p className="text-sm font-medium">{(ticketData as any).iopExecution.activityId}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">活动名称</p>
+              <p className="text-sm font-medium">{(ticketData as any).iopExecution.activityName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">活动状态</p>
+              <Badge variant={(ticketData as any).iopExecution.activityStatus === '执行中' ? 'default' : (ticketData as any).iopExecution.activityStatus === '已完成' ? 'secondary' : 'outline'} className="text-xs">
+                {(ticketData as any).iopExecution.activityStatus}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">创建时间</p>
+              <p className="text-sm font-medium">{(ticketData as any).iopExecution.activityCreateTime}</p>
+            </div>
+          </div>
+
+          {/* 渠道分布 */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">渠道分布</h3>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>渠道</TableHead>
+                  <TableHead className="text-right">触达客户数</TableHead>
+                  <TableHead className="text-right">转化客户数</TableHead>
+                  <TableHead className="text-right">转化率</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ticketData as any).iopExecution.channelDistribution?.map((channel: any, idx: number) => (
+                  <TableRow key={idx}>
+                    <TableCell>{channel.channel}</TableCell>
+                    <TableCell className="text-right">{channel.reachedCount}</TableCell>
+                    <TableCell className="text-right">{channel.convertedCount}</TableCell>
+                    <TableCell className="text-right">{channel.conversionRate}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* 策略明细 */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 mt-6">策略明细</h3>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>策略ID</TableHead>
+                  <TableHead>策略名称</TableHead>
+                  <TableHead>渠道</TableHead>
+                  <TableHead className="text-right">触达客户数</TableHead>
+                  <TableHead className="text-right">转化客户数</TableHead>
+                  <TableHead className="text-right">转化率</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ticketData as any).iopExecution.strategyDetails?.map((strategy: any, idx: number) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-xs text-muted-foreground">{strategy.strategyId}</TableCell>
+                    <TableCell className="font-medium">{strategy.strategyName}</TableCell>
+                    <TableCell>{strategy.channel}</TableCell>
+                    <TableCell className="text-right">{strategy.reachedCount}</TableCell>
+                    <TableCell className="text-right">{strategy.convertedCount}</TableCell>
+                    <TableCell className="text-right">{strategy.conversionRate}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* 查看详情 */}
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
+              const iopPath = `/workspace/iop-activity-detail?activityId=${(ticketData as any).iopExecution.activityId}&ticketId=${ticketData.ticketId}`;
+              addTab({ id: iopPath, title: '活动详情', path: iopPath });
+              router.push(iopPath);
+            }}>
+              查看活动详情
+            </Button>
+          </div>
         </CollapsibleCard>
       )}
 

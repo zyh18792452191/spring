@@ -38,7 +38,10 @@ function generateMockOrders(count: number): WorkOrder[] {
     '离网维系策略调度',
     '离网维系客群调度',
     '中高端指标调度',
-    '离网维系指标调度'
+    '离网维系指标调度',
+    '天山区流量攻坚区域攻坚调度',
+    '沙依巴克区5G升级区域攻坚调度',
+    '水磨沟区套餐升档区域攻坚调度'
   ];
   // 根据title中的关键词映射调度类型
   const dispatchTypes: Record<string, string> = {};
@@ -57,20 +60,20 @@ function generateMockOrders(count: number): WorkOrder[] {
 
   const orders: WorkOrder[] = [];
 
-  // 为每个Tab生成前3条固定数据，确保显示三种超时状态
+  // 为每个Tab生成前3条固定数据，确保显示三种超时状态，并覆盖客群调度/策略调度/区域攻坚调度三类
   const fixedOrders: { tab: string; status: string; timeoutStatus: string; titleIndex: number }[] = [
-    // 我发起的 - 3条数据
+    // 我发起的 - 客群调度/策略调度/区域攻坚调度各1条
     { tab: '我发起的', status: 'completed', timeoutStatus: '正常', titleIndex: 0 },
-    { tab: '我发起的', status: 'pending', timeoutStatus: '即将超时', titleIndex: 1 },
-    { tab: '我发起的', status: 'processing', timeoutStatus: '已超时', titleIndex: 2 },
-    // 待办 - 3条数据
-    { tab: '待办', status: 'pending', timeoutStatus: '正常', titleIndex: 3 },
-    { tab: '待办', status: 'pending', timeoutStatus: '即将超时', titleIndex: 4 },
-    { tab: '待办', status: 'pending', timeoutStatus: '已超时', titleIndex: 5 },
-    // 已办 - 3条数据
-    { tab: '已办', status: 'processing', timeoutStatus: '正常', titleIndex: 6 },
-    { tab: '已办', status: 'processing', timeoutStatus: '即将超时', titleIndex: 7 },
-    { tab: '已办', status: 'processing', timeoutStatus: '已超时', titleIndex: 8 },
+    { tab: '我发起的', status: 'pending', timeoutStatus: '即将超时', titleIndex: 4 },
+    { tab: '我发起的', status: 'processing', timeoutStatus: '已超时', titleIndex: 16 },
+    // 待办 - 客群调度/策略调度/区域攻坚调度各1条
+    { tab: '待办', status: 'pending', timeoutStatus: '正常', titleIndex: 11 },
+    { tab: '待办', status: 'pending', timeoutStatus: '即将超时', titleIndex: 6 },
+    { tab: '待办', status: 'pending', timeoutStatus: '已超时', titleIndex: 17 },
+    // 已办 - 客群调度/策略调度/区域攻坚调度各1条
+    { tab: '已办', status: 'processing', timeoutStatus: '正常', titleIndex: 13 },
+    { tab: '已办', status: 'processing', timeoutStatus: '即将超时', titleIndex: 9 },
+    { tab: '已办', status: 'processing', timeoutStatus: '已超时', titleIndex: 18 },
   ];
 
   // 生成固定数据，使用最新的日期以确保排在前面
