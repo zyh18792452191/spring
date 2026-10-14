@@ -243,15 +243,17 @@ export default function BestPracticePage() {
                   <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
                     查看详情
                   </Button>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto gap-1 p-0 text-primary"
-                    onClick={() => router.push(`/workspace/strategy/matching?template=${encodeURIComponent(item.id)}&from=best-practice`)}
-                  >
-                    <Rocket className="w-3.5 h-3.5" />
-                    一键复用
-                  </Button>
+                  {item.reviewStatus === 'published' && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto gap-1 p-0 text-primary"
+                      onClick={() => router.push(`/workspace/strategy/matching?template=${encodeURIComponent(item.id)}&from=best-practice`)}
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      一键复用
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -345,9 +347,11 @@ function BestPracticeDialog({ record, onClose, onReview }: { record: BestPractic
                 评审
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => window.open('/workspace/strategy/library', '_blank')}>
-              去策略库引用
-            </Button>
+            {record.reviewStatus === 'published' && (
+              <Button size="sm" variant="outline" onClick={() => window.open('/workspace/strategy/library', '_blank')}>
+                去策略库引用
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
