@@ -41,7 +41,13 @@ function generateMockOrders(count: number): WorkOrder[] {
     '离网维系指标调度',
     '天山区流量攻坚区域攻坚调度',
     '沙依巴克区5G升级区域攻坚调度',
-    '水磨沟区套餐升档区域攻坚调度'
+    '水磨沟区套餐升档区域攻坚调度',
+    '5G终端换机客群调度',
+    '融合套餐渗透客群调度',
+    '家庭宽带续费客群调度',
+    '5G终端换机策略调度',
+    '融合套餐渗透策略调度',
+    '全球通保有策略调度'
   ];
   // 根据title中的关键词映射调度类型
   const dispatchTypes: Record<string, string> = {};
@@ -60,19 +66,25 @@ function generateMockOrders(count: number): WorkOrder[] {
 
   const orders: WorkOrder[] = [];
 
-  // 为每个Tab生成前3条固定数据，确保显示三种超时状态，并覆盖客群调度/策略调度/区域攻坚调度三类
+  // 为每个Tab生成前5条固定数据，确保覆盖客群调度2条/策略调度2条/区域攻坚调度1条
   const fixedOrders: { tab: string; status: string; timeoutStatus: string; titleIndex: number }[] = [
-    // 我发起的 - 客群调度/策略调度/区域攻坚调度各1条
+    // 我发起的 - 客群调度2条/策略调度2条/区域攻坚调度1条
     { tab: '我发起的', status: 'completed', timeoutStatus: '正常', titleIndex: 0 },
+    { tab: '我发起的', status: 'pending', timeoutStatus: '正常', titleIndex: 19 },
     { tab: '我发起的', status: 'pending', timeoutStatus: '即将超时', titleIndex: 4 },
+    { tab: '我发起的', status: 'processing', timeoutStatus: '即将超时', titleIndex: 22 },
     { tab: '我发起的', status: 'processing', timeoutStatus: '已超时', titleIndex: 16 },
-    // 待办 - 客群调度/策略调度/区域攻坚调度各1条
+    // 待办 - 客群调度2条/策略调度2条/区域攻坚调度1条
     { tab: '待办', status: 'pending', timeoutStatus: '正常', titleIndex: 11 },
+    { tab: '待办', status: 'pending', timeoutStatus: '正常', titleIndex: 20 },
     { tab: '待办', status: 'pending', timeoutStatus: '即将超时', titleIndex: 6 },
+    { tab: '待办', status: 'pending', timeoutStatus: '即将超时', titleIndex: 23 },
     { tab: '待办', status: 'pending', timeoutStatus: '已超时', titleIndex: 17 },
-    // 已办 - 客群调度/策略调度/区域攻坚调度各1条
+    // 已办 - 客群调度2条/策略调度2条/区域攻坚调度1条
     { tab: '已办', status: 'processing', timeoutStatus: '正常', titleIndex: 13 },
+    { tab: '已办', status: 'processing', timeoutStatus: '正常', titleIndex: 21 },
     { tab: '已办', status: 'processing', timeoutStatus: '即将超时', titleIndex: 9 },
+    { tab: '已办', status: 'processing', timeoutStatus: '即将超时', titleIndex: 24 },
     { tab: '已办', status: 'processing', timeoutStatus: '已超时', titleIndex: 18 },
   ];
 
