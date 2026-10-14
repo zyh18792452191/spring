@@ -2,15 +2,18 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, ChevronRight, Rocket, Search, Star, TrendingDown, TrendingUp } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Rocket, Search, Star, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
-import { BEST_PRACTICES, type BestPractice } from '../data';
+import { BEST_PRACTICES, FINAL_APPROVER, REVIEWER_ROUTING, type BestPractice, type ReviewRecord } from '../data';
 
 interface CategoryNode {
   name: string;
@@ -18,12 +21,21 @@ interface CategoryNode {
   children?: CategoryNode[];
 }
 
-/** 按采纳次数推导实践生命周期：候选→评审中→已发布→已归档 */
-function lifecycleOf(item: BestPractice): { label: string; className: string } {
-  if (item.adoptionCount >= 30) return { label: '已发布', className: 'bg-emerald-100 text-emerald-700' };
-  if (item.adoptionCount >= 15) return { label: '评审中', className: 'bg-amber-100 text-amber-700' };
-  if (item.adoptionCount >= 5) return { label: '候选', className: 'bg-blue-100 text-blue-700' };
-  return { label: '已归档', className: 'bg-muted text-muted-foreground' };
+/** 评审状态 → 展示标签（显式状态，由评审动作驱动） */
+function statusMeta(status: BestPractice['reviewStatus']): { label: string; className: string } {
+  switch (status) {
+    case 'published': return { label: '已发布', className: 'bg-emerald-100 text-emerald-700' };
+    case 'reviewing': return { label: '评审中', className: 'bg-amber-100 text-amber-700' };
+    case 'candidate': return { label: '候选', className: 'bg-blue-100 text-blue-700' };
+    case 'archived': return { label: '已归档', className: 'bg-muted text-muted-foreground' };
+  }
+}
+
+/** 格式化当前时间（评审记录时间戳） */
+function nowString(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function BestPracticePage() {
@@ -32,6 +44,8 @@ export default function BestPracticePage() {
   const [activeScenario, setActiveScenario] = useState('all');
   const [keyword, setKeyword] = useState('');
   const [detail, setDetail] = useState<BestPractice | null>(null);
+  const [practices, setPractices] = useState<BestPractice[]>(BEST_PRACTICES);
+  const [reviewTarget, setReviewTarget] = useState<BestPractice | null>(null);
 
   const tree = useMemo<CategoryNode[]>(() => {
     const scenarioMap = new Map<string, number>();
@@ -55,16 +69,38 @@ export default function BestPracticePage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return BEST_PRACTICES.filter((item) => {
+    return practices.filter((item) => {
       const matchScenario = activeScenario === 'all' || item.scenario === activeScenario || item.category === activeScenario;
       const matchKeyword =
         !keyword.trim() || item.title.includes(keyword.trim()) || item.summary.includes(keyword.trim());
       return matchScenario && matchKeyword;
     });
-  }, [activeScenario, keyword]);
+  }, [activeScenario, keyword, practices]);
 
   const toggleExpand = (name: string) => {
     setExpanded((prev) => (prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]));
+  };
+
+  const submitReview = (id: string, result: 'approve' | 'reject', opinion: string) => {
+    setPractices((prev) =>
+      prev.map((p) => {
+        if (p.id !== id) return p;
+        const route = REVIEWER_ROUTING[p.scenario] ?? FINAL_APPROVER;
+        const record: ReviewRecord = {
+          reviewer: route.reviewer,
+          role: route.role,
+          result,
+          opinion: opinion.trim() || (result === 'approve' ? '同意发布' : '退回候选'),
+          at: nowString(),
+        };
+        return {
+          ...p,
+          reviewStatus: result === 'approve' ? 'published' : 'candidate',
+          reviewRecords: [...p.reviewRecords, record],
+        };
+      }),
+    );
+    setReviewTarget(null);
   };
 
   return (
@@ -179,8 +215,8 @@ export default function BestPracticePage() {
                     {item.category}
                   </Badge>
                   {(() => {
-                    const lc = lifecycleOf(item);
-                    return <Badge variant="outline" className={`border-0 ${lc.className}`}>{lc.label}</Badge>;
+                    const sm = statusMeta(item.reviewStatus);
+                    return <Badge variant="outline" className={`border-0 ${sm.className}`}>{sm.label}</Badge>;
                   })()}
                 </div>
               </div>
@@ -198,6 +234,12 @@ export default function BestPracticePage() {
                   {item.author} · {item.publishedAt}
                 </span>
                 <div className="flex items-center gap-1">
+                  {(item.reviewStatus === 'candidate' || item.reviewStatus === 'reviewing') && (
+                    <Button variant="link" size="sm" className="h-auto gap-1 p-0 text-primary" onClick={() => setReviewTarget(item)}>
+                      <ClipboardCheck className="w-3.5 h-3.5" />
+                      评审
+                    </Button>
+                  )}
                   <Button variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setDetail(item)}>
                     查看详情
                   </Button>
@@ -222,13 +264,15 @@ export default function BestPracticePage() {
         </div>
       </div>
 
-      <BestPracticeDialog record={detail} onClose={() => setDetail(null)} />
+      <BestPracticeDialog record={detail} onClose={() => setDetail(null)} onReview={(item) => { setDetail(null); setReviewTarget(item); }} />
+      <ReviewDialog key={reviewTarget?.id ?? 'empty'} record={reviewTarget} onClose={() => setReviewTarget(null)} onSubmit={submitReview} />
     </div>
   );
 }
 
-function BestPracticeDialog({ record, onClose }: { record: BestPractice | null; onClose: () => void }) {
+function BestPracticeDialog({ record, onClose, onReview }: { record: BestPractice | null; onClose: () => void; onReview: (item: BestPractice) => void }) {
   if (!record) return null;
+  const sm = statusMeta(record.reviewStatus);
   return (
     <Dialog open={Boolean(record)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-xl">
@@ -238,6 +282,7 @@ function BestPracticeDialog({ record, onClose }: { record: BestPractice | null; 
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               {record.category}
             </Badge>
+            <Badge variant="outline" className={`border-0 ${sm.className}`}>{sm.label}</Badge>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
@@ -252,6 +297,14 @@ function BestPracticeDialog({ record, onClose }: { record: BestPractice | null; 
               <span className="text-foreground">{record.relatedStrategies} 条</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-muted-foreground">达成率</span>
+              <span className="text-foreground">{record.achievementRate}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">改善幅度</span>
+              <span className="text-foreground">+{record.improvement}pp</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-muted-foreground">采纳次数</span>
               <span className="text-foreground">{record.adoptionCount} 次</span>
             </div>
@@ -260,6 +313,24 @@ function BestPracticeDialog({ record, onClose }: { record: BestPractice | null; 
               <span className="text-foreground">{record.publishedAt}</span>
             </div>
           </div>
+          {record.reviewRecords.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-foreground">评审记录</div>
+              {record.reviewRecords.map((r, i) => (
+                <div key={i} className="rounded-lg border border-border p-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{r.reviewer}</span>
+                    <span className="text-muted-foreground">{r.role}</span>
+                    {r.result === 'approve'
+                      ? <Badge variant="outline" className="border-0 bg-emerald-100 text-emerald-700">通过</Badge>
+                      : <Badge variant="outline" className="border-0 bg-red-100 text-red-700">驳回</Badge>}
+                    <span className="ml-auto text-muted-foreground">{r.at}</span>
+                  </div>
+                  <p className="mt-1 text-muted-foreground">{r.opinion}</p>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="text-xs leading-relaxed text-muted-foreground">
             数据来源：最佳实践由策略效果库中达成率与改善幅度双优的策略提炼形成，采纳次数统计策略库中引用该实践的策略数量；
             关联策略清单可在策略库中按"引用实践"筛选查看。
@@ -268,9 +339,124 @@ function BestPracticeDialog({ record, onClose }: { record: BestPractice | null; 
             <Button variant="outline" size="sm" onClick={onClose}>
               关闭
             </Button>
-            <Button size="sm" onClick={() => window.open('/workspace/strategy/library', '_blank')}>
+            {(record.reviewStatus === 'candidate' || record.reviewStatus === 'reviewing') && (
+              <Button size="sm" onClick={() => onReview(record)}>
+                <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
+                评审
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => window.open('/workspace/strategy/library', '_blank')}>
               去策略库引用
             </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReviewDialog({ record, onClose, onSubmit }: { record: BestPractice | null; onClose: () => void; onSubmit: (id: string, result: 'approve' | 'reject', opinion: string) => void }) {
+  const [result, setResult] = useState<'approve' | 'reject'>('approve');
+  const [opinion, setOpinion] = useState('');
+
+  if (!record) return null;
+  const route = REVIEWER_ROUTING[record.scenario] ?? FINAL_APPROVER;
+  const sm = statusMeta(record.reviewStatus);
+
+  return (
+    <Dialog open={Boolean(record)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span>评审最佳实践</span>
+            <Badge variant="outline" className={`border-0 ${sm.className}`}>{sm.label}</Badge>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <div>
+            <div className="font-medium text-foreground">{record.title}</div>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="secondary" className="bg-primary/10 text-primary">{record.category}</Badge>
+              <span>场景：{record.scenario}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/50 p-3 text-center">
+            <div>
+              <div className="text-lg font-semibold text-foreground">{record.achievementRate}%</div>
+              <div className="text-xs text-muted-foreground">达成率</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-foreground">+{record.improvement}pp</div>
+              <div className="text-xs text-muted-foreground">改善幅度</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-foreground">{record.adoptionCount}</div>
+              <div className="text-xs text-muted-foreground">采纳次数</div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">当前评审人</span>
+              <span className="text-foreground">{route.reviewer}（{route.role}）</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">审定发布</span>
+              <span className="text-foreground">{FINAL_APPROVER.reviewer}（{FINAL_APPROVER.role}）</span>
+            </div>
+          </div>
+
+          {record.reviewRecords.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-foreground">历史评审记录</div>
+              {record.reviewRecords.map((r, i) => (
+                <div key={i} className="rounded-lg border border-border p-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{r.reviewer}</span>
+                    <span className="text-muted-foreground">{r.role}</span>
+                    {r.result === 'approve'
+                      ? <Badge variant="outline" className="border-0 bg-emerald-100 text-emerald-700">通过</Badge>
+                      : <Badge variant="outline" className="border-0 bg-red-100 text-red-700">驳回</Badge>}
+                    <span className="ml-auto text-muted-foreground">{r.at}</span>
+                  </div>
+                  <p className="mt-1 text-muted-foreground">{r.opinion}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>评审结论</Label>
+            <RadioGroup value={result} onValueChange={(v) => setResult(v === 'reject' ? 'reject' : 'approve')} className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="approve" id="review-approve" />
+                <Label htmlFor="review-approve" className="cursor-pointer font-normal">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />通过（发布）
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="reject" id="review-reject" />
+                <Label htmlFor="review-reject" className="cursor-pointer font-normal">
+                  <XCircle className="h-4 w-4 text-red-500" />驳回（退回候选）
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>评审意见</Label>
+            <Textarea
+              value={opinion}
+              onChange={(e) => setOpinion(e.target.value)}
+              placeholder={result === 'approve' ? '说明通过理由，如达成率与改善幅度双优、可复制性等' : '说明驳回原因及改进建议'}
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={onClose}>取消</Button>
+            <Button size="sm" onClick={() => onSubmit(record.id, result, opinion)}>提交评审</Button>
           </div>
         </div>
       </DialogContent>

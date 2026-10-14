@@ -282,6 +282,36 @@ export const EFFECT_RECORDS: EffectRecord[] = [
   },
 ];
 
+/** 最佳实践评审状态：候选→评审中→已发布→已归档（由评审动作驱动，非采纳次数推导） */
+export type ReviewStatus = 'candidate' | 'reviewing' | 'published' | 'archived';
+
+/** 评审记录（评审人 + 结论 + 意见） */
+export interface ReviewRecord {
+  /** 评审人姓名 */
+  reviewer: string;
+  /** 评审角色（按业务场景路由） */
+  role: string;
+  /** 评审结论 */
+  result: 'approve' | 'reject';
+  /** 评审意见 */
+  opinion: string;
+  /** 评审时间 */
+  at: string;
+}
+
+/** 评审人路由：按业务场景路由到对应运营专家 */
+export const REVIEWER_ROUTING: Record<string, { reviewer: string; role: string }> = {
+  '流量运营': { reviewer: '张伟', role: '流量运营专家' },
+  '离网维系': { reviewer: '刘敏', role: '客户运营中心专家' },
+  '家庭融合运营': { reviewer: '陈晨', role: '家庭业务部专家' },
+  '中高端客户运营': { reviewer: '王强', role: '客户运营中心专家' },
+  '国际业务运营': { reviewer: '李娜', role: '国际业务部专家' },
+  '增量运营': { reviewer: '赵磊', role: '渠道运营部专家' },
+};
+
+/** 审定发布人（市场部策略负责人，评审通过后终审发布） */
+export const FINAL_APPROVER = { reviewer: '周伟民', role: '市场部策略负责人' };
+
 /** 最佳实践 */
 export interface BestPractice {
   id: string;
@@ -293,6 +323,14 @@ export interface BestPractice {
   adoptionCount: number;
   publishedAt: string;
   author: string;
+  /** 评审状态（由评审动作驱动，非采纳次数推导） */
+  reviewStatus: ReviewStatus;
+  /** 达成率 %（来源：策略效果库） */
+  achievementRate: number;
+  /** 改善幅度（百分点，来源：策略效果库） */
+  improvement: number;
+  /** 评审记录（历史评审意见） */
+  reviewRecords: ReviewRecord[];
 }
 
 export const BEST_PRACTICES: BestPractice[] = [
@@ -306,6 +344,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 26,
     publishedAt: '2026-05-12',
     author: '市场部·策略组',
+    reviewStatus: 'reviewing',
+    achievementRate: 86.5,
+    improvement: 3.4,
+    reviewRecords: [],
   },
   {
     id: 'BP-002',
@@ -317,6 +359,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 19,
     publishedAt: '2026-05-14',
     author: '客户运营中心',
+    reviewStatus: 'reviewing',
+    achievementRate: 88.1,
+    improvement: 9.1,
+    reviewRecords: [],
   },
   {
     id: 'BP-003',
@@ -328,6 +374,12 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 31,
     publishedAt: '2026-05-16',
     author: '家庭业务部',
+    reviewStatus: 'published',
+    achievementRate: 91.2,
+    improvement: 6.6,
+    reviewRecords: [
+      { reviewer: '陈晨', role: '家庭业务部专家', result: 'approve', opinion: '续约权益分层清晰，达成率与改善幅度双优，同意发布。', at: '2026-05-17 10:20' },
+    ],
   },
   {
     id: 'BP-004',
@@ -339,6 +391,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 14,
     publishedAt: '2026-05-18',
     author: '市场部·策略组',
+    reviewStatus: 'candidate',
+    achievementRate: 88.9,
+    improvement: 3.1,
+    reviewRecords: [],
   },
   {
     id: 'BP-005',
@@ -350,6 +406,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 22,
     publishedAt: '2026-05-20',
     author: '客户运营中心',
+    reviewStatus: 'reviewing',
+    achievementRate: 82.1,
+    improvement: 5.4,
+    reviewRecords: [],
   },
   {
     id: 'BP-006',
@@ -361,6 +421,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 9,
     publishedAt: '2026-05-22',
     author: '国际业务部',
+    reviewStatus: 'candidate',
+    achievementRate: 81.0,
+    improvement: 3.2,
+    reviewRecords: [],
   },
   {
     id: 'BP-007',
@@ -372,6 +436,10 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 17,
     publishedAt: '2026-05-24',
     author: '渠道运营部',
+    reviewStatus: 'reviewing',
+    achievementRate: 94.5,
+    improvement: 9.5,
+    reviewRecords: [],
   },
   {
     id: 'BP-008',
@@ -383,6 +451,12 @@ export const BEST_PRACTICES: BestPractice[] = [
     adoptionCount: 35,
     publishedAt: '2026-05-26',
     author: '网格运营部',
+    reviewStatus: 'published',
+    achievementRate: 89.6,
+    improvement: 4.8,
+    reviewRecords: [
+      { reviewer: '张伟', role: '流量运营专家', result: 'approve', opinion: '话术标准化落地效果好，一线复用率高，同意发布。', at: '2026-05-27 09:30' },
+    ],
   },
 ];
 
