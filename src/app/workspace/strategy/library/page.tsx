@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -10,7 +10,10 @@ import {
   Trash2,
   Upload,
   ArrowUpDown,
+  Copy,
 } from 'lucide-react';
+import ActivityConfigDialog from '@/components/strategy/ActivityConfigDialog';
+import { getActivityInstances, type ActivityInstance } from '@/lib/activity-instances';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -51,6 +54,7 @@ const strategyCategoryTree: Record<string, string[]> = {
 const sourceLabels: Record<string, { label: string; color: string }> = {
   expert: { label: '专家经验', color: 'bg-primary/10 text-primary' },
   ai_generated: { label: 'AI生成', color: 'bg-ai/10 text-ai' },
+  activity: { label: '活动', color: 'bg-green-100 text-green-700' },
 };
 
 interface Strategy {
@@ -212,6 +216,61 @@ const mockData: Strategy[] = [
   },
 ];
 
+// 活动数据（静态 + 动态实例）统一结构，source/dispatchSystem 对静态活动可选
+interface ActivityItem {
+  id: string;
+  name: string;
+  type: ActivityInstance['type'];
+  status: ActivityInstance['status'];
+  updatedAt: string;
+  scenario: string;
+  source?: string;
+  dispatchSystem?: string;
+  strategyPlan?: string;
+  speech?: string;
+}
+
+// 活动配置静态数据（合并入策略库列表，以策略列表为主）
+const MOCK_ACTIVITY_LIST: ActivityItem[] = [
+  { id: 'ACT-2026-0821-007', name: '乌鲁木齐 5G 套餐渗透率升档攻坚活动', type: 'IOP普通营销', status: '执行中', updatedAt: '2026-08-21 14:30', scenario: '流量运营' },
+  { id: 'ACT-2026-0826-003', name: '高价值客户离网挽留权益活动', type: 'IOP普通营销', status: '审批中', updatedAt: '2026-08-26 09:15', scenario: '离网维系' },
+  { id: 'ACT-2026-0820-004', name: '全球通携转预警多波次维系', type: '剧本营销', status: '执行中', updatedAt: '2026-08-20 16:40', scenario: '中高端客户运营' },
+  { id: 'ACT-2026-0825-006', name: '中高端客户流量提升剧本', type: '剧本营销', status: '草稿', updatedAt: '2026-08-25 11:20', scenario: '中高端客户运营' },
+];
+
+// 活动状态映射为策略库状态（草稿→下架，其余→上架）
+function mapActivityStatus(status: ActivityItem['status']): string {
+  return status === '草稿' ? '下架' : '上架';
+}
+
+// 活动映射为策略（合并进策略列表）
+function activityToStrategy(activity: ActivityItem): Strategy {
+  return {
+    id: activity.id,
+    name: activity.name,
+    source: 'activity',
+    category1: activity.type,
+    category2: '',
+    productCount: 0,
+    scriptCount: 0,
+    channels: [],
+    actualConversion: null,
+    confidence: null,
+    referenceRate: null,
+    relatedIndicators: 0,
+    relatedGroups: 0,
+    relatedRootCauses: 0,
+    businessScenarios: [activity.scenario],
+    status: mapActivityStatus(activity.status),
+    createdAt: activity.updatedAt.slice(0, 10),
+    validFrom: '',
+    validUntil: '',
+    description: activity.strategyPlan || activity.name,
+    products: [],
+    scripts: [],
+  };
+}
+
 export default function StrategyListPage() {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
@@ -231,6 +290,15 @@ export default function StrategyListPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [filterValidity, setFilterValidity] = useState('all');
   const [data, setData] = useState(mockData);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [copyTarget, setCopyTarget] = useState<Strategy | null>(null);
+
+  // 合并活动数据到策略列表（以策略列表为主，活动映射为策略行）
+  useEffect(() => {
+    const activities = [...MOCK_ACTIVITY_LIST, ...getActivityInstances()];
+    const activityStrategies = activities.map(activityToStrategy);
+    setData([...mockData, ...activityStrategies]);
+  }, []);
 
   const handleImport = () => {
     setImportStep('upload');
@@ -357,7 +425,7 @@ export default function StrategyListPage() {
             <Upload className="w-4 h-4" />
             导入
           </Button>
-          <Button size="sm" className="gap-1.5" onClick={() => router.push('/workspace/strategy/library/edit')}>
+          <Button size="sm" className="gap-1.5" onClick={() => { setCopyTarget(null); setCreateDialogOpen(true); }}>
             <Plus className="w-4 h-4" />
             新增策略
           </Button>
@@ -502,14 +570,18 @@ export default function StrategyListPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">{item.category1}</TableCell>
-                  <TableCell className="text-sm text-center">{item.productCount}</TableCell>
-                  <TableCell className="text-sm text-center">{item.scriptCount}</TableCell>
+                  <TableCell className="text-sm text-center">{item.source === 'activity' ? '-' : item.productCount}</TableCell>
+                  <TableCell className="text-sm text-center">{item.source === 'activity' ? '-' : item.scriptCount}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      {item.channels.map((ch) => (
-                        <Badge key={ch} variant="outline" className="text-xs px-1 py-0">{ch}</Badge>
-                      ))}
-                    </div>
+                    {item.source === 'activity' ? (
+                      <span className="text-sm text-gray-400">-</span>
+                    ) : (
+                      <div className="flex gap-1 flex-wrap">
+                        {item.channels.map((ch) => (
+                          <Badge key={ch} variant="outline" className="text-xs px-1 py-0">{ch}</Badge>
+                        ))}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-center">{item.actualConversion !== null ? `${item.actualConversion}%` : '-'}</TableCell>
                   <TableCell>
@@ -541,9 +613,9 @@ export default function StrategyListPage() {
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-center">{item.relatedRootCauses}</TableCell>
-                  <TableCell className="text-sm text-center">{item.relatedIndicators}</TableCell>
-                  <TableCell className="text-sm text-center">{item.relatedGroups}</TableCell>
+                  <TableCell className="text-sm text-center">{item.source === 'activity' ? '-' : item.relatedRootCauses}</TableCell>
+                  <TableCell className="text-sm text-center">{item.source === 'activity' ? '-' : item.relatedIndicators}</TableCell>
+                  <TableCell className="text-sm text-center">{item.source === 'activity' ? '-' : item.relatedGroups}</TableCell>
                   <TableCell>
                     <Badge variant={item.status === '上架' ? 'default' : 'secondary'} className="text-xs px-1.5 py-0">{item.status}</Badge>
                   </TableCell>
@@ -580,6 +652,14 @@ export default function StrategyListPage() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>编辑</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setCopyTarget(item); setCreateDialogOpen(true); }}>
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>复制</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -752,6 +832,20 @@ export default function StrategyListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 新增/复制策略弹窗（复用活动配置的新建活动表单） */}
+      <ActivityConfigDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        initialName={copyTarget ? `${copyTarget.name}（副本）` : undefined}
+        initialType={copyTarget?.source === 'activity' ? (copyTarget.category1 === '剧本营销' ? '剧本营销' : 'IOP普通营销') : undefined}
+        onSubmitted={() => {
+          setCreateDialogOpen(false);
+          setCopyTarget(null);
+          const activities = [...MOCK_ACTIVITY_LIST, ...getActivityInstances()];
+          setData([...mockData, ...activities.map(activityToStrategy)]);
+        }}
+      />
     </div>
   );
 }

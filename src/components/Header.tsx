@@ -207,7 +207,6 @@ const menuItems: MenuItem[] = [
           { name: '策略沉淀', path: '/workspace/strategy-repository/effect' },
           { name: '跨中心协作', path: '/workspace/strategy-collab/insight', hidden: true },
           { name: '接收诊断', path: '/workspace/strategy/receive-diagnosis' },
-          { name: '活动配置', path: '/workspace/strategy/activity-config' },
           { name: '策略审批', path: '/workspace/strategy/approval' },
           { name: '活动全链路追踪', path: '/workspace/strategy/activity-track' },
           { name: '网格通活动配置', path: '/workspace/strategy/grid-config', hidden: true },

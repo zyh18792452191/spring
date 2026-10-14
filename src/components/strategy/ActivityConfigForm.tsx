@@ -60,9 +60,12 @@ const ACTIVITY_STATUS_COLORS: Record<ActivityListItem['status'], 'default' | 'se
 export interface ActivityConfigFormProps {
   mode?: 'full' | 'create-only';
   onSubmitted?: () => void;
+  initialName?: string;
+  initialType?: ActivityType;
+  initialScenario?: string;
 }
 
-export default function ActivityConfigForm({ mode = 'full', onSubmitted }: ActivityConfigFormProps) {
+export default function ActivityConfigForm({ mode = 'full', onSubmitted, initialName, initialType, initialScenario }: ActivityConfigFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const conclusion = searchParams.get('conclusion') || 'DG-20260828-001';
@@ -79,9 +82,9 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted }: Activ
       setActivities([...instances, ...MOCK_ACTIVITY_LIST]);
     }
   }, []);
-  const [type, setType] = useState<ActivityType>('IOP普通营销');
-  const [scene, setScene] = useState('提值');
-  const [activityName, setActivityName] = useState('乌鲁木齐 5G 套餐渗透率升档攻坚活动');
+  const [type, setType] = useState<ActivityType>(initialType ?? 'IOP普通营销');
+  const [scene, setScene] = useState(initialScenario ?? '提值');
+  const [activityName, setActivityName] = useState(initialName ?? '乌鲁木齐 5G 套餐渗透率升档攻坚活动');
   const [targetGroup, setTargetGroup] = useState('乌鲁木齐中低端 5G 终端已具备未升档客户');
   const [targetScale, setTargetScale] = useState('48620');
   const [excludeTags, setExcludeTags] = useState<string[]>(['近1月办理后返销/取消业务客户']);
