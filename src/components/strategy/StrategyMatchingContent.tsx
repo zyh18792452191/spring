@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import StrategyMakingPanel from './StrategyMakingPanel';
+import StrategyMakingPanel, { type StrategyPlan } from './StrategyMakingPanel';
 import ActivityConfigDialog from './ActivityConfigDialog';
 import StrategyDispatchDialog from './StrategyDispatchDialog';
 
@@ -281,6 +281,39 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     setSelectedPlan(planName);
   };
 
+  // 确认采用该策略：将方案内容填充到下方「推荐策略」
+  const handleAdoptStrategy = (plan: StrategyPlan) => {
+    const content = `${plan.name}：针对「${plan.targetGroup}」，推荐「${plan.product}」，通过「${plan.channel}」触达，预估转化 ${plan.conversion}。`;
+    setRootCauseCards((prev) =>
+      prev.map((card, cardIndex) => {
+        if (cardIndex !== 0) return card;
+        const firstPair = card.customerStrategyPairs[0];
+        if (!firstPair) return card;
+        const defaultConfig = getDefaultProvinces(card.indicatorDirection);
+        return {
+          ...card,
+          customerStrategyPairs: card.customerStrategyPairs.map((pair, pairIndex) => {
+            if (pairIndex !== 0) return pair;
+            return {
+              ...pair,
+              strategies: [
+                ...pair.strategies,
+                {
+                  id: Date.now(),
+                  content,
+                  isAIGenerated: true,
+                  isEditing: false,
+                  dispatchProvinces: defaultConfig.provinces,
+                  provinceRankType: defaultConfig.rankType,
+                },
+              ],
+            };
+          }),
+        };
+      })
+    );
+  };
+
   // 编辑原因分析弹窗状态
   const [editAnalysisDialog, setEditAnalysisDialog] = useState({
     isOpen: false,
@@ -301,6 +334,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
   // 策略调度弹窗 + 新建活动弹窗
   const [dispatchDialogOpen, setDispatchDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityDialogHideTargetGroup, setActivityDialogHideTargetGroup] = useState(false);
 
   const handleReturn = () => {
     if (onReturn) {
@@ -481,72 +515,16 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     handleCloseAddGroupDialog();
   };
 
-  // 添加策略（无需客群）
-  const handleAddStrategyWithoutGroup = (cardId: number) => {
-    const card = rootCauseCards.find(c => c.id === cardId);
-    if (!card) return;
-
-    const defaultProvinceConfig = getDefaultProvinces(card.indicatorDirection);
-
-    const newPair: CustomerStrategyPair = {
-      id: Date.now(),
-      customerGroup: null,
-      strategies: [
-        {
-          id: Date.now(),
-          content: '',
-          isAIGenerated: false,
-          isEditing: false,
-          dispatchProvinces: defaultProvinceConfig.provinces,
-          provinceRankType: defaultProvinceConfig.rankType,
-        },
-      ],
-    };
-
-    setRootCauseCards(rootCauseCards.map(card => {
-      if (card.id === cardId) {
-        return {
-          ...card,
-          customerStrategyPairs: [...card.customerStrategyPairs, newPair],
-        };
-      }
-      return card;
-    }));
+  // 添加策略（无需客群）：打开新建策略弹窗，隐藏目标客群
+  const handleAddStrategyWithoutGroup = () => {
+    setActivityDialogHideTargetGroup(true);
+    setActivityDialogOpen(true);
   };
 
-  // 添加策略
-  const handleAddStrategy = (cardId: number, pairId: number) => {
-    const card = rootCauseCards.find(c => c.id === cardId);
-    if (!card) return;
-    const defaultProvinceConfig = getDefaultProvinces(card.indicatorDirection);
-
-    setRootCauseCards(rootCauseCards.map(card => {
-      if (card.id === cardId) {
-        return {
-          ...card,
-          customerStrategyPairs: card.customerStrategyPairs.map(pair => {
-            if (pair.id === pairId) {
-              return {
-                ...pair,
-                strategies: [
-                  ...pair.strategies,
-                  {
-                    id: Date.now(),
-                    content: '',
-                    isAIGenerated: false,
-                    isEditing: false,
-                    dispatchProvinces: defaultProvinceConfig.provinces,
-                    provinceRankType: defaultProvinceConfig.rankType,
-                  },
-                ],
-              };
-            }
-            return pair;
-          }),
-        };
-      }
-      return card;
-    }));
+  // 添加策略：打开新建策略弹窗（含目标客群）
+  const handleAddStrategy = () => {
+    setActivityDialogHideTargetGroup(false);
+    setActivityDialogOpen(true);
   };
 
   // 客群-策略对拖拽开始
@@ -814,7 +792,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
       <div className="space-y-6">
         {/* 步骤导航 - 五步链路 */}
         <div className="flex items-center justify-center gap-3 mb-8 flex-wrap">
-          {['接收诊断', '策略编辑', '活动配置'].map((step, idx) => (
+          {['数据洞察', '策略匹配', '调度派发'].map((step, idx) => (
             <div key={step} className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${idx <= 1 ? 'bg-[#3B82F6]' : 'bg-gray-300'}`}>
@@ -845,7 +823,8 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
             <div className="mb-6">
               <StrategyMakingPanel
                 scenario="流量运营"
-                onNewStrategy={() => setActivityDialogOpen(true)}
+                onNewStrategy={() => { setActivityDialogHideTargetGroup(false); setActivityDialogOpen(true); }}
+                onConfirm={handleAdoptStrategy}
               />
             </div>
 
@@ -1081,7 +1060,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                                           variant="ghost"
                                           size="sm"
                                           className="text-[#3B82F6]"
-                                          onClick={() => handleAddStrategy(card.id, pair.id)}
+                                          onClick={() => handleAddStrategy()}
                                         >
                                           <Plus className="w-4 h-4 mr-1" />
                                           添加策略
@@ -1144,7 +1123,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                                     <Plus className="w-4 h-4 mr-1" />
                                     添加潜在客户群
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => handleAddStrategyWithoutGroup(card.id)}>
+                                  <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => handleAddStrategyWithoutGroup()}>
                                     <Plus className="w-4 h-4 mr-1" />
                                     添加策略（无需客群）
                                   </Button>
@@ -1433,6 +1412,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
       <ActivityConfigDialog
         open={activityDialogOpen}
         onOpenChange={setActivityDialogOpen}
+        hideTargetGroup={activityDialogHideTargetGroup}
         onSubmitted={() => setActivityDialogOpen(false)}
       />
     </>

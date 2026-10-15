@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Copy, Eye, Info, Package, Plus, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Copy, Eye, Package, Plus, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityType } from '@/lib/strategy-activity';
 import { getActivityInstances } from '@/lib/activity-instances';
-import { ScriptMarketingContent } from '@/components/strategy/ScriptMarketingEditor';
+import MarketingSpeechEditor, { type SpeechSource } from './MarketingSpeechEditor';
 
 const SCENE_LIBRARY: Record<ActivityType, string[]> = {
   IOP普通营销: ['提值', '保有', '全球通', '风险客户'],
@@ -63,13 +62,11 @@ export interface ActivityConfigFormProps {
   initialName?: string;
   initialType?: ActivityType;
   initialScenario?: string;
+  hideTargetGroup?: boolean;
 }
 
-export default function ActivityConfigForm({ mode = 'full', onSubmitted, initialName, initialType, initialScenario }: ActivityConfigFormProps) {
+export default function ActivityConfigForm({ mode = 'full', onSubmitted, initialName, initialScenario, hideTargetGroup = false }: ActivityConfigFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const conclusion = searchParams.get('conclusion') || 'DG-20260828-001';
-  const strategyId = searchParams.get('strategy') || 'STR-2026-0301';
 
   const [view, setView] = useState<'list' | 'create'>(mode === 'create-only' ? 'create' : 'list');
   const [activities, setActivities] = useState<ActivityListItem[]>(MOCK_ACTIVITY_LIST);
@@ -82,33 +79,30 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
       setActivities([...instances, ...MOCK_ACTIVITY_LIST]);
     }
   }, []);
-  const [type, setType] = useState<ActivityType>(initialType ?? 'IOP普通营销');
   const [scene, setScene] = useState(initialScenario ?? '提值');
   const [activityName, setActivityName] = useState(initialName ?? '乌鲁木齐 5G 套餐渗透率升档攻坚活动');
   const [targetGroup, setTargetGroup] = useState('乌鲁木齐中低端 5G 终端已具备未升档客户');
   const [targetScale, setTargetScale] = useState('48620');
   const [excludeTags, setExcludeTags] = useState<string[]>(['近1月办理后返销/取消业务客户']);
   const [channels, setChannels] = useState<string[]>(['短信', '外呼']);
-  const [script, setScript] = useState('权益告知话术');
+  const [script, setScript] = useState('您的套餐流量已使用 80%，续约可享 5G 流量升档礼包，现在办理还赠送 30GB 体验流量。');
+  const [scriptSource, setScriptSource] = useState<SpeechSource>('ai');
   const [products, setProducts] = useState<string[]>(['5G 升档包 30 元/月']);
   const [priority, setPriority] = useState('高');
   const [deadline, setDeadline] = useState('2026-09-15');
-  const [generated, setGenerated] = useState(false);
 
   // 新建活动 / 复制活动
   const handleNewActivity = () => {
-    setType('IOP普通营销');
     setActivityName('');
     setView('create');
   };
 
   const handleCopyActivity = (item: ActivityListItem) => {
-    setType(item.type);
     setActivityName(`${item.name}（副本）`);
     setView('create');
   };
 
-  const currentSceneList = SCENE_LIBRARY[type];
+  const currentSceneList = SCENE_LIBRARY['IOP普通营销'];
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
   };
@@ -121,7 +115,7 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
           <div>
             <h1 className="text-xl font-semibold text-foreground">活动配置</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              查看与复制当前已配置的活动，或新建 IOP 普通营销 / 剧本营销活动并移交调度中心。
+              查看与复制当前已配置的活动，或新建 IOP 普通营销活动并移交调度中心。
             </p>
           </div>
           {view === 'list' ? (
@@ -182,18 +176,8 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
         </Card>
       ) : (
         <>
-          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            <Info className="h-4 w-4" />
-            关联诊断：{conclusion} · 关联策略：{strategyId}
-          </div>
-
-          <Tabs value={type} onValueChange={(v) => { setType(v as ActivityType); setScene(SCENE_LIBRARY[v as ActivityType][0]); }}>
-            <TabsList>
-              <TabsTrigger value="IOP普通营销">IOP普通营销</TabsTrigger>
-              <TabsTrigger value="剧本营销">剧本营销</TabsTrigger>
-            </TabsList>
-            <TabsContent value="IOP普通营销" className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">基础信息</CardTitle>
@@ -231,6 +215,7 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
                   </CardContent>
                 </Card>
 
+                {!hideTargetGroup && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">目标客群</CardTitle>
@@ -277,11 +262,12 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">触达配置</CardTitle>
-                    <CardDescription>渠道 / 话术 / 产品</CardDescription>
+                    <CardDescription>渠道 / 产品</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-2">
@@ -293,17 +279,6 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
                           </Badge>
                         ))}
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>营销话术（话术模板）</Label>
-                      <Select value={script} onValueChange={setScript}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="权益告知话术">权益告知话术</SelectItem>
-                          <SelectItem value="限时升档礼包话术">限时升档礼包话术</SelectItem>
-                          <SelectItem value="续费提醒话术">续费提醒话术</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>推荐产品</Label>
@@ -319,35 +294,19 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
                 </Card>
               </div>
 
-              {/* 底部操作栏 */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
-                <div className="text-xs text-muted-foreground">
-                  快捷优化路径：当前版本 <span className="font-medium text-foreground">v1</span>
-                  <Button variant="link" size="sm" className="h-auto p-0 px-1 text-primary">查看修改日志</Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  {generated ? (
-                    <>
-                      <span className="text-xs text-emerald-600">活动实例 ACT-2026-0828-001 已生成</span>
-                      {mode === 'create-only' ? (
-                        <Button size="sm" onClick={() => onSubmitted?.()}>确认创建</Button>
-                      ) : (
-                        <Button size="sm" onClick={() => router.push(`/workspace/strategy/approval?activity=ACT-2026-0828-001&name=${encodeURIComponent(activityName)}`)}>
-                          提交审批
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <Button size="sm" onClick={() => setGenerated(true)}>生成活动实例</Button>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
+              {/* 营销话术（单独区块） */}
+              <MarketingSpeechEditor
+                scenario="流量运营"
+                value={script}
+                source={scriptSource}
+                onChange={(v, s) => { setScript(v); setScriptSource(s); }}
+              />
 
-            <TabsContent value="剧本营销" className="mt-4">
-              <ScriptMarketingContent embedded />
-            </TabsContent>
-          </Tabs>
+              {/* 底部操作栏 */}
+              <div className="flex items-center justify-end gap-3 rounded-lg border border-border bg-card p-4">
+                <Button size="sm" onClick={() => onSubmitted?.()}>确认</Button>
+              </div>
+            </div>
         </>
       )}
     </div>

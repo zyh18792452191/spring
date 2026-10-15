@@ -57,7 +57,7 @@ export default function StrategyDispatchDialog({
                 <StrategyMakingPanel
                   scenario={scenario}
                   onNewStrategy={() => setActivityDialogOpen(true)}
-                  onConfirm={(data) => setConfirmedStrategy({ plan: data.plan, speech: data.speech })}
+                  onConfirm={(p) => setConfirmedStrategy({ plan: p.name, speech: p.speech })}
                 />
 
                 {confirmedStrategy && (

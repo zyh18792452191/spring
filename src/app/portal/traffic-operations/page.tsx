@@ -16,7 +16,6 @@ import IndicatorDispatchDialog from '@/components/IndicatorDispatchDialog';
 import XinjiangRegionSelector from '@/components/XinjiangRegionSelector';
 import BusinessOpportunityTab from './components/BusinessOpportunityTab';
 import RegionAssaultTab from './components/RegionAssaultTab';
-import StrategyDispatchDialog from '@/components/strategy/StrategyDispatchDialog';
 
 // 类型定义
 interface MetricData {
@@ -2770,9 +2769,8 @@ function IndicatorTreeContent({ indicatorName, selectedMonth, currentTab }: { in
   const [internalSelectedMonth, setInternalSelectedMonth] = useState<string>('2025-01');
   const finalSelectedMonth = selectedMonth !== undefined ? selectedMonth : internalSelectedMonth;
   const [indicatorTreeData, setIndicatorTreeData] = useState<IndicatorCardData[]>(getInitialIndicatorTreeData(indicatorName));
-  const [strategyDispatchOpen, setStrategyDispatchOpen] = useState(false);
 
-  // 仅「当月流量增幅」场景启用策略制定弹窗，其余场景保持原有跳转
+  // 仅「当月流量增幅」场景启用策略制定（客群调度触客策略策略化），其余场景保持原有跳转
   const isTrafficIncrease = indicatorName === '当月流量增幅';
 
   const handleCardClick = (id: string) => {
@@ -2848,9 +2846,8 @@ function IndicatorTreeContent({ indicatorName, selectedMonth, currentTab }: { in
               bottomRegions={dynamicAnalysisData.bottomRegions}
               trendData={dynamicAnalysisData.trendData}
               currentTab={currentTab}
-              from="churn-retention"
+              from="traffic-operations"
               businessScenario="流量运营"
-              onStrategyDispatch={isTrafficIncrease ? () => setStrategyDispatchOpen(true) : undefined}
               enableStrategyMaking={isTrafficIncrease}
             />
           </div>
@@ -2865,15 +2862,6 @@ function IndicatorTreeContent({ indicatorName, selectedMonth, currentTab }: { in
           </div>
         </div>
       </div>
-
-      {isTrafficIncrease && (
-        <StrategyDispatchDialog
-          open={strategyDispatchOpen}
-          onOpenChange={setStrategyDispatchOpen}
-          indicatorName={indicatorName}
-          scenario="流量运营"
-        />
-      )}
     </div>
   );
 }
