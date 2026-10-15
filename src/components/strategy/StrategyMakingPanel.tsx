@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Eye, Plus, Sparkles } from 'lucide-react';
+import { Check, Eye, Pencil, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,9 +23,10 @@ interface StrategyMakingPanelProps {
   scenario?: string; // 运营场景（保留用于向后兼容）
   onNewStrategy?: () => void; // 点击「新建策略」触发（父组件打开新建策略弹窗）
   onConfirm?: (plan: StrategyPlan) => void; // 点击「确认采用该策略」返回完整方案
+  onEditPlan?: (plan: StrategyPlan) => void; // 点击方案卡「编辑」触发（父组件打开新建策略弹窗并预填内容）
 }
 
-const PLAN_OPTIONS: StrategyPlan[] = [
+export const PLAN_OPTIONS: StrategyPlan[] = [
   {
     id: 'A',
     name: '方案 A · 升档礼包',
@@ -64,6 +65,7 @@ const PLAN_OPTIONS: StrategyPlan[] = [
 export default function StrategyMakingPanel({
   onNewStrategy,
   onConfirm,
+  onEditPlan,
 }: StrategyMakingPanelProps) {
   // 默认选中 AI 推荐方案
   const [selectedPlan, setSelectedPlan] = useState<string>('A');
@@ -123,13 +125,22 @@ export default function StrategyMakingPanel({
                       <div className="text-emerald-600">预估转化：{plan.conversion}</div>
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setDetailPlan(plan)}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                  >
-                    <Eye className="h-3 w-3" /> 查看详情
-                  </button>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setDetailPlan(plan)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      <Eye className="h-3 w-3" /> 查看详情
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEditPlan?.(plan)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      <Pencil className="h-3 w-3" /> 编辑
+                    </button>
+                  </div>
                 </div>
               );
             })}

@@ -12,8 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import StrategyMakingPanel, { type StrategyPlan } from './StrategyMakingPanel';
+import StrategyMakingPanel, { PLAN_OPTIONS, type StrategyPlan } from './StrategyMakingPanel';
 import ActivityConfigDialog from './ActivityConfigDialog';
+import { type ActivitySubmitData } from './ActivityConfigForm';
 import StrategyDispatchDialog from './StrategyDispatchDialog';
 
 // 地市列表
@@ -168,6 +169,16 @@ const getRankDisplayText = (rankType?: ProvinceRankType, direction?: IndicatorDi
   }
 };
 
+// 根据方案构建策略内容（用于推荐策略表格展示）
+const buildPlanContent = (plan: StrategyPlan): string =>
+  `${plan.name}：针对「${plan.targetGroup}」，推荐「${plan.product}」，通过「${plan.channel}」触达，预估转化 ${plan.conversion}。`;
+
+// 根据新建策略弹窗提交数据构建策略内容
+const buildStrategyContent = (data: ActivitySubmitData): string => {
+  const group = data.targetGroup ? `（${data.targetGroup}）` : '';
+  return `${data.activityName}${group}：${data.script}`;
+};
+
 interface StrategyMatchingContentProps {
   indicatorName?: string;      // 默认 '一降到底规模'
   indicatorId?: string;        // 默认 ''
@@ -223,7 +234,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
           strategies: [
             {
               id: 1,
-              content: '对异网主卡有流量客群，基于前期客户消费值，推进对应套餐或包，并进行折扣迎回',
+              content: buildPlanContent(PLAN_OPTIONS[0]),
               isAIGenerated: true,
               isEditing: false,
               dispatchProvinces: initialProvinceConfig.provinces,
@@ -281,32 +292,21 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     setSelectedPlan(planName);
   };
 
-  // 确认采用该策略：将方案内容填充到下方「推荐策略」
+  // 确认采用该策略：更新下方「推荐策略」中首条策略内容为用户选中的方案
   const handleAdoptStrategy = (plan: StrategyPlan) => {
-    const content = `${plan.name}：针对「${plan.targetGroup}」，推荐「${plan.product}」，通过「${plan.channel}」触达，预估转化 ${plan.conversion}。`;
+    const content = buildPlanContent(plan);
     setRootCauseCards((prev) =>
       prev.map((card, cardIndex) => {
         if (cardIndex !== 0) return card;
-        const firstPair = card.customerStrategyPairs[0];
-        if (!firstPair) return card;
-        const defaultConfig = getDefaultProvinces(card.indicatorDirection);
         return {
           ...card,
           customerStrategyPairs: card.customerStrategyPairs.map((pair, pairIndex) => {
             if (pairIndex !== 0) return pair;
             return {
               ...pair,
-              strategies: [
-                ...pair.strategies,
-                {
-                  id: Date.now(),
-                  content,
-                  isAIGenerated: true,
-                  isEditing: false,
-                  dispatchProvinces: defaultConfig.provinces,
-                  provinceRankType: defaultConfig.rankType,
-                },
-              ],
+              strategies: pair.strategies.map((s, sIndex) =>
+                sIndex === 0 ? { ...s, content, isAIGenerated: true } : s
+              ),
             };
           }),
         };
@@ -335,6 +335,10 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
   const [dispatchDialogOpen, setDispatchDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [activityDialogHideTargetGroup, setActivityDialogHideTargetGroup] = useState(false);
+  // 新建策略弹窗提交目标：cardId + pairId（pairId 为 null 表示「无需客群」，新增一个客群-策略对）
+  const [activityDialogTarget, setActivityDialogTarget] = useState<{ cardId: number; pairId: number | null }>({ cardId: 1, pairId: 1 });
+  // 新建策略弹窗预填内容（编辑方案时带入）
+  const [activityDialogInitialData, setActivityDialogInitialData] = useState<Partial<ActivitySubmitData> | undefined>(undefined);
 
   const handleReturn = () => {
     if (onReturn) {
@@ -515,16 +519,80 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
     handleCloseAddGroupDialog();
   };
 
-  // 添加策略（无需客群）：打开新建策略弹窗，隐藏目标客群
-  const handleAddStrategyWithoutGroup = () => {
-    setActivityDialogHideTargetGroup(true);
+  // 打开新建策略弹窗（空表单，用于「新建策略」按钮）
+  const handleOpenNewStrategyDialog = () => {
+    setActivityDialogTarget({ cardId: 1, pairId: 1 });
+    setActivityDialogHideTargetGroup(false);
+    setActivityDialogInitialData(undefined);
     setActivityDialogOpen(true);
   };
 
-  // 添加策略：打开新建策略弹窗（含目标客群）
-  const handleAddStrategy = () => {
+  // 编辑方案：打开新建策略弹窗并预填方案内容
+  const handleEditPlan = (plan: StrategyPlan) => {
+    setActivityDialogTarget({ cardId: 1, pairId: 1 });
     setActivityDialogHideTargetGroup(false);
+    setActivityDialogInitialData({
+      activityName: plan.name,
+      targetGroup: plan.targetGroup,
+      channels: [plan.channel],
+      products: [plan.product],
+      script: plan.speech,
+    });
     setActivityDialogOpen(true);
+  };
+
+  // 添加策略（无需客群）：打开新建策略弹窗，隐藏目标客群
+  const handleAddStrategyWithoutGroup = (cardId: number) => {
+    setActivityDialogTarget({ cardId, pairId: null });
+    setActivityDialogHideTargetGroup(true);
+    setActivityDialogInitialData(undefined);
+    setActivityDialogOpen(true);
+  };
+
+  // 添加策略：打开新建策略弹窗（含目标客群），追加到指定客群-策略对
+  const handleAddStrategy = (cardId: number, pairId: number) => {
+    setActivityDialogTarget({ cardId, pairId });
+    setActivityDialogHideTargetGroup(false);
+    setActivityDialogInitialData(undefined);
+    setActivityDialogOpen(true);
+  };
+
+  // 新建策略弹窗确认：将策略内容写入推荐策略表格
+  const handleActivitySubmitted = (data: ActivitySubmitData) => {
+    const content = buildStrategyContent(data);
+    const { cardId, pairId } = activityDialogTarget;
+    setRootCauseCards((prev) =>
+      prev.map((card) => {
+        if (card.id !== cardId) return card;
+        const defaultConfig = getDefaultProvinces(card.indicatorDirection);
+        const newStrategy = {
+          id: Date.now(),
+          content,
+          isAIGenerated: false,
+          isEditing: false,
+          dispatchProvinces: defaultConfig.provinces,
+          provinceRankType: defaultConfig.rankType,
+        };
+        if (pairId === null) {
+          // 无需客群：新增一个客群-策略对（无客群）
+          return {
+            ...card,
+            customerStrategyPairs: [
+              ...card.customerStrategyPairs,
+              { id: Date.now(), customerGroup: null, strategies: [newStrategy] },
+            ],
+          };
+        }
+        // 添加策略：向指定客群-策略对追加策略（潜在风险客群合并单元格）
+        return {
+          ...card,
+          customerStrategyPairs: card.customerStrategyPairs.map((pair) =>
+            pair.id === pairId ? { ...pair, strategies: [...pair.strategies, newStrategy] } : pair
+          ),
+        };
+      })
+    );
+    setActivityDialogOpen(false);
   };
 
   // 客群-策略对拖拽开始
@@ -823,8 +891,9 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
             <div className="mb-6">
               <StrategyMakingPanel
                 scenario="流量运营"
-                onNewStrategy={() => { setActivityDialogHideTargetGroup(false); setActivityDialogOpen(true); }}
+                onNewStrategy={handleOpenNewStrategyDialog}
                 onConfirm={handleAdoptStrategy}
+                onEditPlan={handleEditPlan}
               />
             </div>
 
@@ -1060,7 +1129,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                                           variant="ghost"
                                           size="sm"
                                           className="text-[#3B82F6]"
-                                          onClick={() => handleAddStrategy()}
+                                          onClick={() => handleAddStrategy(card.id, pair.id)}
                                         >
                                           <Plus className="w-4 h-4 mr-1" />
                                           添加策略
@@ -1123,7 +1192,7 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
                                     <Plus className="w-4 h-4 mr-1" />
                                     添加潜在客户群
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => handleAddStrategyWithoutGroup()}>
+                                  <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => handleAddStrategyWithoutGroup(card.id)}>
                                     <Plus className="w-4 h-4 mr-1" />
                                     添加策略（无需客群）
                                   </Button>
@@ -1413,7 +1482,8 @@ function StrategyMatchingContent({ indicatorName: indicatorNameProp, indicatorId
         open={activityDialogOpen}
         onOpenChange={setActivityDialogOpen}
         hideTargetGroup={activityDialogHideTargetGroup}
-        onSubmitted={() => setActivityDialogOpen(false)}
+        initialData={activityDialogInitialData}
+        onSubmitted={handleActivitySubmitted}
       />
     </>
   );

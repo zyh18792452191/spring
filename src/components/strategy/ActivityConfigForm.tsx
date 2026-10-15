@@ -56,16 +56,26 @@ const ACTIVITY_STATUS_COLORS: Record<ActivityListItem['status'], 'default' | 'se
   '已完成': 'secondary',
 };
 
+// 新建策略提交的数据（策略内容）
+export interface ActivitySubmitData {
+  activityName: string;
+  targetGroup: string;
+  channels: string[];
+  products: string[];
+  script: string;
+}
+
 export interface ActivityConfigFormProps {
   mode?: 'full' | 'create-only';
-  onSubmitted?: () => void;
+  onSubmitted?: (data: ActivitySubmitData) => void;
   initialName?: string;
   initialType?: ActivityType;
   initialScenario?: string;
   hideTargetGroup?: boolean;
+  initialData?: Partial<ActivitySubmitData>;
 }
 
-export default function ActivityConfigForm({ mode = 'full', onSubmitted, initialName, initialScenario, hideTargetGroup = false }: ActivityConfigFormProps) {
+export default function ActivityConfigForm({ mode = 'full', onSubmitted, initialName, initialScenario, hideTargetGroup = false, initialData }: ActivityConfigFormProps) {
   const router = useRouter();
 
   const [view, setView] = useState<'list' | 'create'>(mode === 'create-only' ? 'create' : 'list');
@@ -80,14 +90,14 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
     }
   }, []);
   const [scene, setScene] = useState(initialScenario ?? '提值');
-  const [activityName, setActivityName] = useState(initialName ?? '乌鲁木齐 5G 套餐渗透率升档攻坚活动');
-  const [targetGroup, setTargetGroup] = useState('乌鲁木齐中低端 5G 终端已具备未升档客户');
+  const [activityName, setActivityName] = useState(initialName ?? initialData?.activityName ?? '乌鲁木齐 5G 套餐渗透率升档攻坚活动');
+  const [targetGroup, setTargetGroup] = useState(initialData?.targetGroup ?? '乌鲁木齐中低端 5G 终端已具备未升档客户');
   const [targetScale, setTargetScale] = useState('48620');
   const [excludeTags, setExcludeTags] = useState<string[]>(['近1月办理后返销/取消业务客户']);
-  const [channels, setChannels] = useState<string[]>(['短信', '外呼']);
-  const [script, setScript] = useState('您的套餐流量已使用 80%，续约可享 5G 流量升档礼包，现在办理还赠送 30GB 体验流量。');
+  const [channels, setChannels] = useState<string[]>(initialData?.channels ?? ['短信', '外呼']);
+  const [script, setScript] = useState(initialData?.script ?? '您的套餐流量已使用 80%，续约可享 5G 流量升档礼包，现在办理还赠送 30GB 体验流量。');
   const [scriptSource, setScriptSource] = useState<SpeechSource>('ai');
-  const [products, setProducts] = useState<string[]>(['5G 升档包 30 元/月']);
+  const [products, setProducts] = useState<string[]>(initialData?.products ?? ['5G 升档包 30 元/月']);
   const [priority, setPriority] = useState('高');
   const [deadline, setDeadline] = useState('2026-09-15');
 
@@ -304,7 +314,20 @@ export default function ActivityConfigForm({ mode = 'full', onSubmitted, initial
 
               {/* 底部操作栏 */}
               <div className="flex items-center justify-end gap-3 rounded-lg border border-border bg-card p-4">
-                <Button size="sm" onClick={() => onSubmitted?.()}>确认</Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    onSubmitted?.({
+                      activityName,
+                      targetGroup: hideTargetGroup ? '' : targetGroup,
+                      channels,
+                      products,
+                      script,
+                    })
+                  }
+                >
+                  确认
+                </Button>
               </div>
             </div>
         </>
